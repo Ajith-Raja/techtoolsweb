@@ -7,6 +7,7 @@ import { Link } from "wouter";
 export function Navbar() {
   const navigation = [
     { name: "Home", href: "/" },
+    { name: "Plagiarism Checker", href: "/plagiarism" },
     { name: "About", href: "/about" },
     { name: "Features", href: "/features" },
   ];
