@@ -2,11 +2,15 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search, Clock, FileText } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 export default function PlagiarismChecker() {
   const [text, setText] = useState("");
   const [isChecking, setIsChecking] = useState(false);
-  const [results, setResults] = useState<null | { matches: Array<{ text: string, source: string }> }>(null);
+  const [results, setResults] = useState<null | {
+    matches: Array<{ text: string, source: string }>,
+    plagiarismPercentage: number
+  }>(null);
 
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
   const estimatedTime = Math.ceil(wordCount / 100); // Rough estimate: 1 minute per 100 words
@@ -16,6 +20,7 @@ export default function PlagiarismChecker() {
     // Mock results for now
     setTimeout(() => {
       setResults({
+        plagiarismPercentage: 35,
         matches: [
           {
             text: "Lorem ipsum dolor sit amet",
@@ -30,6 +35,12 @@ export default function PlagiarismChecker() {
       setIsChecking(false);
     }, 2000);
   };
+
+  const COLORS = ['#ff6b6b', '#51cf66'];
+  const pieData = results ? [
+    { name: 'Plagiarized', value: results.plagiarismPercentage },
+    { name: 'Original', value: 100 - results.plagiarismPercentage }
+  ] : [];
 
   return (
     <div className="relative isolate">
@@ -101,23 +112,65 @@ export default function PlagiarismChecker() {
         {results && (
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle>Results</CardTitle>
+              <CardTitle>Plagiarism Analysis Results</CardTitle>
               <CardDescription>
                 Found potential matches in the following sources
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {results.matches.map((match, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                      <p className="font-medium text-yellow-800">{match.text}</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Found in: <a href={match.source} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{match.source}</a>
-                    </p>
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Pie Chart */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="h-64 w-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                ))}
+                  <div className="mt-4 text-center">
+                    <p className="text-2xl font-bold">{results.plagiarismPercentage}%</p>
+                    <p className="text-sm text-muted-foreground">Plagiarized Content</p>
+                  </div>
+                  <div className="mt-4 flex gap-4 justify-center">
+                    {COLORS.map((color, index) => (
+                      <div key={color} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-sm text-muted-foreground">
+                          {index === 0 ? 'Plagiarized' : 'Original'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Matched Text */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold">Matched Content</h3>
+                  {results.matches.map((match, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="p-4 bg-yellow-50 rounded-lg">
+                        <p className="font-medium text-yellow-800">{match.text}</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Found in: <a href={match.source} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{match.source}</a>
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
