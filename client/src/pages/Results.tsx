@@ -12,8 +12,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  ChevronLeft,
-  Binary
+  ChevronLeft
 } from "lucide-react";
 import type { SeoAnalysisResult } from "@shared/schema";
 
@@ -42,8 +41,8 @@ function StatusIcon({ condition }: { condition: boolean }) {
 }
 
 export default function Results() {
-  const [location, setLocation] = useLocation();
-  const result = location.state?.result as SeoAnalysisResult;
+  const [, setLocation] = useLocation();
+  const result = window.history.state?.result as SeoAnalysisResult;
 
   if (!result) {
     setLocation("/");

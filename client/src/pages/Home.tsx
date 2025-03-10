@@ -18,7 +18,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { analyzeSiteSchema, type AnalyzeSiteInput, type SeoAnalysisResult } from "@shared/schema";
 
 export default function Home() {
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
 
   const form = useForm<AnalyzeSiteInput>({
@@ -31,12 +31,13 @@ export default function Home() {
   const analyzeMutation = useMutation({
     mutationFn: async (data: AnalyzeSiteInput) => {
       const response = await apiRequest("POST", "/api/analyze", data);
-      return response.json() as Promise<SeoAnalysisResult>;
+      const result = await response.json() as SeoAnalysisResult;
+      return result;
     },
     onSuccess: (data) => {
-      setLocation("/results", { 
-        state: { result: data } 
-      });
+      // Use window.history.state to store the result
+      window.history.pushState({ result: data }, "", "/results");
+      navigate("/results");
     },
     onError: (error) => {
       toast({
