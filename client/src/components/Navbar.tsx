@@ -12,12 +12,12 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="bg-background border-b">
+    <nav className="bg-background border-b sticky top-0 z-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link href="/">
-              <span className="text-2xl font-bold text-primary">SEO Analyzer</span>
+              <span className="text-2xl font-bold text-primary cursor-pointer">SEO Analyzer</span>
             </Link>
           </div>
 
@@ -44,13 +44,14 @@ export function Navbar() {
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="h-10 w-10">
                   <Menu className="h-6 w-6" />
+                  <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right">
-                <div className="mt-6 flow-root">
-                  <div className="space-y-2">
+              <SheetContent side="right" className="w-[240px] sm:w-[280px]">
+                <div className="py-4">
+                  <div className="mt-4 space-y-1">
                     {navigation.map((item) => (
                       <Link
                         key={item.name}
