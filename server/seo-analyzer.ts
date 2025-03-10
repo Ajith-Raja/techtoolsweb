@@ -3,18 +3,24 @@ import type { SeoAnalysisResult } from '@shared/schema';
 
 export async function analyzeSite(url: string): Promise<SeoAnalysisResult> {
   try {
-    const response = await fetch(url);
+    // Add user agent to avoid fetch blocks
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; SeoAnalyzer/1.0;)'
+      }
+    });
+
     if (!response.ok) {
-      throw new Error(`Failed to fetch site: ${response.statusText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const html = await response.text();
     const $ = cheerio.load(html);
-    
+
     // Analyze meta tags
     const title = $('title').text();
     const description = $('meta[name="description"]').attr('content');
-    
+
     const metaTags = {
       title: title || null,
       description: description || null,
@@ -89,7 +95,8 @@ export async function analyzeSite(url: string): Promise<SeoAnalysisResult> {
       contentAnalysis,
       recommendations
     };
-  } catch (error) {
-    throw new Error(`Failed to analyze site: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    throw new Error(`Failed to analyze site: ${errorMessage}`);
   }
 }
