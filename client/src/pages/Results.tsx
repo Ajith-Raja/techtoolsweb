@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import jsPDF from 'jspdf';
 import {
   Card,
   CardContent,
@@ -19,7 +20,8 @@ import {
   Globe,
   Layout,
   FileText,
-  Zap
+  Zap,
+  Download
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { SeoAnalysisResult } from "@shared/schema";
@@ -71,6 +73,81 @@ export default function Results() {
     retry: false,
   });
 
+  const handleDownload = () => {
+    if (!result) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    let yPos = 20;
+
+    // Title
+    doc.setFontSize(20);
+    doc.text('SEO Analysis Report', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 15;
+
+    // Score
+    doc.setFontSize(16);
+    doc.text(`Overall Score: ${result.score}/100`, 20, yPos);
+    yPos += 15;
+
+    // Meta Tags
+    doc.setFontSize(14);
+    doc.text('Meta Tags Analysis:', 20, yPos);
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.text(`• Title: ${result.metaTags.title || 'Not found'}`, 25, yPos);
+    yPos += 7;
+    doc.text(`• Description: ${result.metaTags.description || 'Not found'}`, 25, yPos);
+    yPos += 15;
+
+    // Headers
+    doc.setFontSize(14);
+    doc.text('Header Structure:', 20, yPos);
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.text(`• H1 Tags: ${result.headers.h1Count}`, 25, yPos);
+    yPos += 7;
+    doc.text(`• H2 Tags: ${result.headers.h2Count}`, 25, yPos);
+    yPos += 7;
+    doc.text(`• H3 Tags: ${result.headers.h3Count}`, 25, yPos);
+    yPos += 15;
+
+    // Content Analysis
+    doc.setFontSize(14);
+    doc.text('Content Analysis:', 20, yPos);
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.text(`• Word Count: ${result.contentAnalysis.wordCount}`, 25, yPos);
+    yPos += 7;
+    doc.text(`• Readability Score: ${result.contentAnalysis.readabilityScore}/100`, 25, yPos);
+    yPos += 15;
+
+    // Technical SEO
+    doc.setFontSize(14);
+    doc.text('Technical SEO:', 20, yPos);
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.text(`• Load Time: ${result.technicalSeo.loadTime}`, 25, yPos);
+    yPos += 7;
+    doc.text(`• Page Size: ${result.technicalSeo.pageSize}`, 25, yPos);
+    yPos += 15;
+
+    // Recommendations
+    doc.setFontSize(14);
+    doc.text('Recommendations:', 20, yPos);
+    yPos += 10;
+    doc.setFontSize(12);
+    result.recommendations.forEach((rec) => {
+      doc.text(`• ${rec.issue} (${rec.severity})`, 25, yPos);
+      yPos += 7;
+      doc.text(`  Solution: ${rec.solution}`, 25, yPos);
+      yPos += 10;
+    });
+
+    // Generate the PDF
+    doc.save('seo-analysis-report.pdf');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -87,14 +164,23 @@ export default function Results() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <Button
-          variant="outline"
-          onClick={() => setLocation("/")}
-          className="mb-6"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Analyze Another URL
-        </Button>
+        <div className="flex justify-between items-center">
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/")}
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Analyze Another URL
+          </Button>
+
+          <Button
+            onClick={handleDownload}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download Report
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>
