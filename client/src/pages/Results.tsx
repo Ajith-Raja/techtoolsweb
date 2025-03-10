@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -12,7 +13,8 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from "lucide-react";
 import type { SeoAnalysisResult } from "@shared/schema";
 
@@ -42,9 +44,22 @@ function StatusIcon({ condition }: { condition: boolean }) {
 
 export default function Results() {
   const [, setLocation] = useLocation();
-  const result = window.history.state?.result as SeoAnalysisResult;
 
-  if (!result) {
+  const { data: result, isLoading, isError } = useQuery<SeoAnalysisResult>({
+    queryKey: ["/api/lastAnalysis"],
+    staleTime: 0,
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError || !result) {
     setLocation("/");
     return null;
   }

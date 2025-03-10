@@ -15,7 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { analyzeSiteSchema, type AnalyzeSiteInput, type SeoAnalysisResult } from "@shared/schema";
+import { analyzeSiteSchema, type AnalyzeSiteInput } from "@shared/schema";
 
 export default function Home() {
   const [, navigate] = useLocation();
@@ -31,12 +31,9 @@ export default function Home() {
   const analyzeMutation = useMutation({
     mutationFn: async (data: AnalyzeSiteInput) => {
       const response = await apiRequest("POST", "/api/analyze", data);
-      const result = await response.json() as SeoAnalysisResult;
-      return result;
+      return response.json();
     },
-    onSuccess: (data) => {
-      // Use window.history.state to store the result
-      window.history.pushState({ result: data }, "", "/results");
+    onSuccess: () => {
       navigate("/results");
     },
     onError: (error) => {
