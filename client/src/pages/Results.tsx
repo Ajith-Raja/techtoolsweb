@@ -14,8 +14,14 @@ import {
   XCircle,
   AlertCircle,
   ChevronLeft,
-  Loader2
+  Loader2,
+  BarChart2,
+  Globe,
+  Layout,
+  FileText,
+  Zap
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { SeoAnalysisResult } from "@shared/schema";
 
 function ScoreIndicator({ score }: { score: number }) {
@@ -39,6 +45,20 @@ function StatusIcon({ condition }: { condition: boolean }) {
     <CheckCircle2 className="h-5 w-5 text-green-500" />
   ) : (
     <XCircle className="h-5 w-5 text-red-500" />
+  );
+}
+
+function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
+  const colors = {
+    high: 'bg-red-100 text-red-800',
+    medium: 'bg-yellow-100 text-yellow-800',
+    low: 'bg-green-100 text-green-800'
+  };
+
+  return (
+    <Badge variant="outline" className={`${colors[severity]} font-medium`}>
+      {severity.charAt(0).toUpperCase() + severity.slice(1)}
+    </Badge>
   );
 }
 
@@ -66,7 +86,7 @@ export default function Results() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <Button
           variant="outline"
           onClick={() => setLocation("/")}
@@ -80,79 +100,194 @@ export default function Results() {
           <CardHeader>
             <CardTitle>SEO Analysis Results</CardTitle>
             <CardDescription>
-              Review your website's SEO performance and recommendations
+              Comprehensive analysis of your website's SEO performance
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <ScoreIndicator score={result.score} />
 
             <div className="grid gap-6 md:grid-cols-2">
+              {/* Meta Tags Section */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Meta Tags</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Meta Tags</CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span>Title Tag</span>
-                    <StatusIcon condition={result.metaTags.hasTitle} />
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Title</span>
+                      <StatusIcon condition={result.metaTags.hasTitle} />
+                    </div>
+                    <p className="text-sm text-muted-foreground">{result.metaTags.title}</p>
+                    <p className="text-xs text-muted-foreground">Length: {result.metaTags.titleLength} characters</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>Meta Description</span>
-                    <StatusIcon condition={result.metaTags.hasDescription} />
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Headers</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span>H1 Heading</span>
-                    <StatusIcon condition={result.headers.hasH1} />
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Description</span>
+                      <StatusIcon condition={result.metaTags.hasDescription} />
+                    </div>
+                    <p className="text-sm text-muted-foreground">{result.metaTags.description}</p>
+                    <p className="text-xs text-muted-foreground">Length: {result.metaTags.descriptionLength} characters</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>Header Structure</span>
-                    <div className="text-sm text-muted-foreground">
-                      H1: {result.headers.h1Count}, H2: {result.headers.h2Count}
+
+                  <div className="space-y-2">
+                    <span className="font-medium">Other Meta Tags</span>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>Keywords: {result.metaTags.keywords ? "✓" : "✗"}</div>
+                      <div>Robots: {result.metaTags.robots ? "✓" : "✗"}</div>
+                      <div>Viewport: {result.metaTags.viewport ? "✓" : "✗"}</div>
+                      <div>OG Tags: {result.metaTags.ogTags.title ? "✓" : "✗"}</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Headers Section */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Content Analysis</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span>Word Count</span>
-                    <span className="text-sm text-muted-foreground">
-                      {result.contentAnalysis.wordCount} words
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <Layout className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Headers Structure</CardTitle>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>Content Length</span>
-                    <StatusIcon condition={result.contentAnalysis.hasEnoughContent} />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-3 bg-muted rounded-lg">
+                      <div className="text-2xl font-bold">{result.headers.h1Count}</div>
+                      <div className="text-sm text-muted-foreground">H1 Tags</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted rounded-lg">
+                      <div className="text-2xl font-bold">{result.headers.h2Count}</div>
+                      <div className="text-sm text-muted-foreground">H2 Tags</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted rounded-lg">
+                      <div className="text-2xl font-bold">{result.headers.h3Count}</div>
+                      <div className="text-sm text-muted-foreground">H3 Tags</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span>Hierarchy</span>
+                      <StatusIcon condition={result.headers.isHierarchyCorrect} />
+                    </div>
+                    <p className="text-sm text-muted-foreground">{result.headers.headerStructure}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Content Analysis Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Content Analysis</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="font-medium">Word Count</div>
+                      <div className="text-2xl font-bold">{result.contentAnalysis.wordCount}</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Readability</div>
+                      <div className="text-2xl font-bold">{result.contentAnalysis.readabilityScore}/100</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="font-medium">Keyword Density</div>
+                    {Object.entries(result.contentAnalysis.keywordDensity).map(([keyword, density]) => (
+                      <div key={keyword} className="flex justify-between text-sm">
+                        <span>{keyword}</span>
+                        <span>{density}%</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="font-medium">Content Quality</div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>Internal Links: {result.contentAnalysis.contentQuality.internalLinksCount}</div>
+                      <div>External Links: {result.contentAnalysis.contentQuality.externalLinksCount}</div>
+                      <div>Has Images: {result.contentAnalysis.contentQuality.hasImages ? "✓" : "✗"}</div>
+                      <div>Paragraphs: {result.contentAnalysis.paragraphCount}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Technical SEO Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Technical SEO</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="font-medium">Load Time</div>
+                      <div className="text-2xl font-bold">{result.technicalSeo.loadTime}</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Page Size</div>
+                      <div className="text-2xl font-bold">{result.technicalSeo.pageSize}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <StatusIcon condition={result.technicalSeo.mobileResponsive} />
+                      <span>Mobile Friendly</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusIcon condition={result.technicalSeo.hasSSL} />
+                      <span>SSL Secure</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusIcon condition={result.technicalSeo.hasSitemap} />
+                      <span>Sitemap</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusIcon condition={result.technicalSeo.hasRobotsTxt} />
+                      <span>Robots.txt</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
+            {/* Recommendations Section */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Recommendations</CardTitle>
+                <div className="flex items-center gap-2">
+                  <BarChart2 className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Recommendations</CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
+                <div className="space-y-4">
                   {result.recommendations.map((recommendation, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                      <span>{recommendation}</span>
-                    </li>
+                    <div key={index} className="border-b pb-4 last:border-0 last:pb-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-medium flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-yellow-500" />
+                          {recommendation.issue}
+                        </div>
+                        <SeverityBadge severity={recommendation.severity} />
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{recommendation.impact}</p>
+                      <p className="text-sm font-medium">Solution:</p>
+                      <p className="text-sm text-muted-foreground">{recommendation.solution}</p>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </CardContent>
             </Card>
           </CardContent>

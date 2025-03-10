@@ -9,6 +9,7 @@ export const seoResults = pgTable("seo_results", {
   metaTags: jsonb("meta_tags").notNull(),
   headers: jsonb("headers").notNull(),
   contentAnalysis: jsonb("content_analysis").notNull(),
+  technicalSeo: jsonb("technical_seo").notNull(),
   recommendations: jsonb("recommendations").notNull(),
   createdAt: text("created_at").notNull()
 });
@@ -25,21 +26,57 @@ export type SeoAnalysisResult = {
   metaTags: {
     title: string | null;
     description: string | null;
+    keywords: string | null;
+    robots: string | null;
+    viewport: string | null;
+    ogTags: {
+      title: string | null;
+      description: string | null;
+      image: string | null;
+    };
     hasTitle: boolean;
     hasDescription: boolean;
     titleLength: number;
     descriptionLength: number;
+    isOptimized: boolean;
   };
   headers: {
     h1Count: number;
     h2Count: number;
     h3Count: number;
     hasH1: boolean;
+    headerStructure: string;
+    isHierarchyCorrect: boolean;
   };
   contentAnalysis: {
     wordCount: number;
     hasEnoughContent: boolean;
     paragraphCount: number;
+    averageSentenceLength: number;
+    readabilityScore: number;
+    keywordDensity: {
+      [key: string]: number;
+    };
+    contentQuality: {
+      hasImages: boolean;
+      hasLinks: boolean;
+      internalLinksCount: number;
+      externalLinksCount: number;
+    };
   };
-  recommendations: string[];
+  technicalSeo: {
+    mobileResponsive: boolean;
+    hasSSL: boolean;
+    hasSitemap: boolean;
+    hasRobotsTxt: boolean;
+    loadTime: string;
+    pageSize: string;
+    imagesOptimized: boolean;
+  };
+  recommendations: Array<{
+    issue: string;
+    severity: 'high' | 'medium' | 'low';
+    impact: string;
+    solution: string;
+  }>;
 };
