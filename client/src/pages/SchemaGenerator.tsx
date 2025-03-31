@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 
 const schemaTypes = [
   { value: "article", label: "Article / BlogPost" },
@@ -75,7 +74,6 @@ export default function SchemaGenerator() {
             <Input onChange={(e) => handleInputChange("telephone", e.target.value)} />
           </>
         );
-      // Add more cases for other schema types
       default:
         return null;
     }
