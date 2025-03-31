@@ -74,6 +74,120 @@ export default function SchemaGenerator() {
             <Input onChange={(e) => handleInputChange("telephone", e.target.value)} />
           </>
         );
+      case "localBusiness":
+        return (
+          <>
+            <Label>Business Name</Label>
+            <Input onChange={(e) => handleInputChange("name", e.target.value)} />
+            <Label>Business Type</Label>
+            <Input onChange={(e) => handleInputChange("type", e.target.value)} />
+            <Label>Address</Label>
+            <Input onChange={(e) => handleInputChange("address", e.target.value)} />
+            <Label>Phone Number</Label>
+            <Input onChange={(e) => handleInputChange("telephone", e.target.value)} />
+            <Label>Opening Hours</Label>
+            <Input onChange={(e) => handleInputChange("openingHours", e.target.value)} />
+          </>
+        );
+      case "product":
+        return (
+          <>
+            <Label>Product Name</Label>
+            <Input onChange={(e) => handleInputChange("name", e.target.value)} />
+            <Label>Brand Name</Label>
+            <Input onChange={(e) => handleInputChange("brand", e.target.value)} />
+            <Label>Description</Label>
+            <Textarea onChange={(e) => handleInputChange("description", e.target.value)} />
+            <Label>Price</Label>
+            <Input type="number" onChange={(e) => handleInputChange("price", e.target.value)} />
+            <Label>Currency</Label>
+            <Input onChange={(e) => handleInputChange("priceCurrency", e.target.value)} />
+          </>
+        );
+      case "faq":
+        return (
+          <>
+            <Label>Question</Label>
+            <Input onChange={(e) => handleInputChange("question", e.target.value)} />
+            <Label>Answer</Label>
+            <Textarea onChange={(e) => handleInputChange("answer", e.target.value)} />
+          </>
+        );
+      case "event":
+        return (
+          <>
+            <Label>Event Name</Label>
+            <Input onChange={(e) => handleInputChange("name", e.target.value)} />
+            <Label>Description</Label>
+            <Textarea onChange={(e) => handleInputChange("description", e.target.value)} />
+            <Label>Start Date</Label>
+            <Input type="datetime-local" onChange={(e) => handleInputChange("startDate", e.target.value)} />
+            <Label>End Date</Label>
+            <Input type="datetime-local" onChange={(e) => handleInputChange("endDate", e.target.value)} />
+            <Label>Location</Label>
+            <Input onChange={(e) => handleInputChange("location", e.target.value)} />
+          </>
+        );
+      case "person":
+        return (
+          <>
+            <Label>Full Name</Label>
+            <Input onChange={(e) => handleInputChange("name", e.target.value)} />
+            <Label>Job Title</Label>
+            <Input onChange={(e) => handleInputChange("jobTitle", e.target.value)} />
+            <Label>Company</Label>
+            <Input onChange={(e) => handleInputChange("worksFor", e.target.value)} />
+            <Label>Website</Label>
+            <Input onChange={(e) => handleInputChange("url", e.target.value)} />
+          </>
+        );
+      case "recipe":
+        return (
+          <>
+            <Label>Recipe Name</Label>
+            <Input onChange={(e) => handleInputChange("name", e.target.value)} />
+            <Label>Description</Label>
+            <Textarea onChange={(e) => handleInputChange("description", e.target.value)} />
+            <Label>Preparation Time (minutes)</Label>
+            <Input type="number" onChange={(e) => handleInputChange("prepTime", e.target.value)} />
+            <Label>Cooking Time (minutes)</Label>
+            <Input type="number" onChange={(e) => handleInputChange("cookTime", e.target.value)} />
+            <Label>Ingredients</Label>
+            <Textarea onChange={(e) => handleInputChange("recipeIngredient", e.target.value)} />
+            <Label>Instructions</Label>
+            <Textarea onChange={(e) => handleInputChange("recipeInstructions", e.target.value)} />
+          </>
+        );
+      case "breadcrumb":
+        return (
+          <>
+            <Label>Homepage URL</Label>
+            <Input onChange={(e) => handleInputChange("homeUrl", e.target.value)} />
+            <Label>Homepage Name</Label>
+            <Input onChange={(e) => handleInputChange("homeName", e.target.value)} />
+            <Label>Current Page URL</Label>
+            <Input onChange={(e) => handleInputChange("currentUrl", e.target.value)} />
+            <Label>Current Page Name</Label>
+            <Input onChange={(e) => handleInputChange("currentName", e.target.value)} />
+          </>
+        );
+      case "jobPosting":
+        return (
+          <>
+            <Label>Job Title</Label>
+            <Input onChange={(e) => handleInputChange("title", e.target.value)} />
+            <Label>Company Name</Label>
+            <Input onChange={(e) => handleInputChange("hiringOrganization", e.target.value)} />
+            <Label>Location</Label>
+            <Input onChange={(e) => handleInputChange("jobLocation", e.target.value)} />
+            <Label>Description</Label>
+            <Textarea onChange={(e) => handleInputChange("description", e.target.value)} />
+            <Label>Employment Type</Label>
+            <Input onChange={(e) => handleInputChange("employmentType", e.target.value)} />
+            <Label>Salary Range</Label>
+            <Input onChange={(e) => handleInputChange("baseSalary", e.target.value)} />
+          </>
+        );
       default:
         return null;
     }
