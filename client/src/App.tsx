@@ -8,6 +8,10 @@ import Home from "@/pages/Home";
 import Results from "@/pages/Results";
 import NotFound from "@/pages/not-found";
 import SchemaGenerator from "./pages/SchemaGenerator";
+import DomainAgeChecker from "./pages/DomainAgeChecker";
+import PlagiarismChecker from "./pages/PlagiarismChecker";
+import About from "./pages/About";
+import Features from "./pages/Features";
 
 function Router() {
   return (
