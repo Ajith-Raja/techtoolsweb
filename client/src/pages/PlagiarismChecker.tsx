@@ -179,3 +179,23 @@ export default function PlagiarismChecker() {
     </div>
   );
 }
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
+export default function PlagiarismChecker() {
+  return (
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-4xl font-bold mb-8">Plagiarism Checker</h1>
+      <Card>
+        <CardContent className="pt-6">
+          <Textarea
+            placeholder="Enter your text to check for plagiarism..."
+            className="min-h-[200px] mb-4"
+          />
+          <Button className="w-full">Check Plagiarism</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

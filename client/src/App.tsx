@@ -18,6 +18,10 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/results" component={Results} />
           <Route path="/schema" component={SchemaGenerator} />
+          <Route path="/domain-age" component={DomainAgeChecker} />
+          <Route path="/plagiarism" component={PlagiarismChecker} />
+          <Route path="/about" component={About} />
+          <Route path="/features" component={Features} />
           <Route component={NotFound} />
         </Switch>
       </main>
