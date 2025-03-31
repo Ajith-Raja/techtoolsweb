@@ -10,6 +10,7 @@ export function Navbar() {
     { name: "Plagiarism Checker", href: "/plagiarism" },
     { name: "About", href: "/about" },
     { name: "Features", href: "/features" },
+    { name: "Schema Generator", href: "/schema" },
   ];
 
   return (
