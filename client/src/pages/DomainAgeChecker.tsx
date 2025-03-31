@@ -18,6 +18,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface DomainInfo {
   domain: string;
@@ -33,6 +41,7 @@ interface DomainInfo {
 export default function DomainAgeChecker() {
   const [domains, setDomains] = useState<string>("");
   const [results, setResults] = useState<DomainInfo[]>([]);
+  const [selectedDomain, setSelectedDomain] = useState<DomainInfo | null>(null);
 
   const handleCheck = async () => {
     // Mock data for demonstration
@@ -88,21 +97,14 @@ export default function DomainAgeChecker() {
                   <TableRow>
                     <TableHead>
                       Domain Name
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <ChevronDown className="ml-1 h-4 w-4 inline" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="space-y-2">
-                              <p>Last Updated: {results[0].lastUpdated}</p>
-                              <p>Registrar: {results[0].registrar}</p>
-                              <p>IP Address: {results[0].ipAddress}</p>
-                              <p>Name Servers: {results[0].nameServers.join(", ")}</p>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="ml-1 p-0 h-4 w-4"
+                        onClick={() => setSelectedDomain(results[0])}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
                     </TableHead>
                     <TableHead>Domain Age</TableHead>
                     <TableHead>Created Date</TableHead>
@@ -120,6 +122,44 @@ export default function DomainAgeChecker() {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Domain Details Dialog */}
+              <Dialog open={!!selectedDomain} onOpenChange={(open) => !open && setSelectedDomain(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Domain Details: {selectedDomain?.domain}</DialogTitle>
+                    <DialogDescription>
+                      Complete registration information and technical details
+                    </DialogDescription>
+                  </DialogHeader>
+                  {selectedDomain && (
+                    <div className="space-y-3 mt-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium">Last Updated:</div>
+                        <div>{selectedDomain.lastUpdated}</div>
+                        
+                        <div className="font-medium">Registrar:</div>
+                        <div>{selectedDomain.registrar}</div>
+                        
+                        <div className="font-medium">IP Address:</div>
+                        <div>{selectedDomain.ipAddress}</div>
+                        
+                        <div className="font-medium">Name Servers:</div>
+                        <div>{selectedDomain.nameServers.join(", ")}</div>
+                        
+                        <div className="font-medium">Domain Age:</div>
+                        <div>{selectedDomain.age}</div>
+                        
+                        <div className="font-medium">Created Date:</div>
+                        <div>{selectedDomain.createdDate}</div>
+                        
+                        <div className="font-medium">Expiry Date:</div>
+                        <div>{selectedDomain.expiryDate}</div>
+                      </div>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         )}
