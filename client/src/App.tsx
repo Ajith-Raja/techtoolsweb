@@ -6,8 +6,8 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import Home from "@/pages/Home";
 import Results from "@/pages/Results";
-import PlagiarismChecker from "@/pages/PlagiarismChecker";
 import NotFound from "@/pages/not-found";
+import SchemaGenerator from "./pages/SchemaGenerator";
 
 function Router() {
   return (
@@ -17,7 +17,7 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/results" component={Results} />
-          <Route path="/plagiarism" component={PlagiarismChecker} />
+          <Route path="/schema" component={SchemaGenerator} />
           <Route component={NotFound} />
         </Switch>
       </main>
