@@ -11,6 +11,7 @@ export function Navbar() {
     { name: "About", href: "/about" },
     { name: "Features", href: "/features" },
     { name: "Schema Generator", href: "/schema" },
+    { name: "Domain Age Checker", href: "/domain-age" },
   ];
 
   return (
