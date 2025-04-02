@@ -9,6 +9,7 @@ import Results from "@/pages/Results";
 import NotFound from "@/pages/not-found";
 import SchemaGenerator from "./pages/SchemaGenerator";
 import DomainAgeChecker from "./pages/DomainAgeChecker";
+import DomainAuthorityChecker from "./pages/DomainAuthorityChecker";
 import PlagiarismChecker from "./pages/PlagiarismChecker";
 import About from "./pages/About";
 import Features from "./pages/Features";
@@ -23,6 +24,7 @@ function Router() {
           <Route path="/results" component={Results} />
           <Route path="/schema" component={SchemaGenerator} />
           <Route path="/domain-age" component={DomainAgeChecker} />
+          <Route path="/domain-authority" component={DomainAuthorityChecker} />
           <Route path="/plagiarism" component={PlagiarismChecker} />
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />

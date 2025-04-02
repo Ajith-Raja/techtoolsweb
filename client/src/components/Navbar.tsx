@@ -1,4 +1,4 @@
-import { Menu, Search, BarChart, BookOpen, FileQuestion, Activity, Home as HomeIcon } from "lucide-react";
+import { Menu, Search, BarChart, BookOpen, FileQuestion, Activity, TrendingUp, Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ export function Navbar() {
     { name: "Features", href: "/features", icon: <BarChart className="mr-2 h-4 w-4" /> },
     { name: "Schema Generator", href: "/schema", icon: <Activity className="mr-2 h-4 w-4" /> },
     { name: "Domain Age Checker", href: "/domain-age", icon: <Search className="mr-2 h-4 w-4" /> },
+    { name: "Domain Authority", href: "/domain-authority", icon: <TrendingUp className="mr-2 h-4 w-4" /> },
   ];
 
   const isActive = (path: string) => location === path;

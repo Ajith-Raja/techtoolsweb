@@ -1,8 +1,9 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { analyzeSite } from "./seo-analyzer";
 import { analyzeSiteSchema } from "@shared/schema";
 import { z } from "zod";
+import * as cheerio from 'cheerio';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analyze", async (req, res) => {
@@ -111,6 +112,192 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]
     });
   });
+
+  // API endpoint for domain authority checking
+  app.post("/api/domain-authority", (req, res) => {
+    try {
+      const { url } = req.body;
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ message: "URL is required" });
+      }
+      
+      // This would be replaced with a real API call in production
+      // For now, we return mock data
+      res.json({
+        domain: url.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+        domainAuthority: 45,
+        pageAuthority: 38,
+        spamScore: 1,
+        linkingDomains: 210,
+        totalBacklinks: 1845,
+        topKeywords: ["seo tools", "domain analysis", "seo checker"]
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check domain authority" });
+    }
+  });
+  
+  // We'll comment out the server-side rendering for now since it may be conflicting with Vite
+  // Server-side rendering for blog posts and SEO-critical pages
+  /*app.get("/:page", (req: Request, res: Response, next) => {
+    // Skip server-side rendering for API routes and static assets
+    const { page } = req.params;
+    if (page.startsWith('api') || page.endsWith('.js') || page.endsWith('.css') || page.endsWith('.ico')) {
+      return next();
+    }
+    
+    // Get the index.html content
+    try {
+      // We need to read the index.html file to modify it
+      import('fs').then(fs => {
+        fs.readFile('./client/index.html', 'utf8', (err, data) => {
+          if (err) {
+            console.error('Error reading index.html:', err);
+            return next();
+          }
+          
+          // Use cheerio to manipulate the HTML
+          const $ = cheerio.load(data);
+          const pageTitle = getPageTitle(page);
+          const pageDescription = getPageDescription(page);
+          
+          // Update meta tags for SEO
+          $('title').text(pageTitle);
+          $('meta[name="description"]').attr('content', pageDescription);
+          
+          // Add Open Graph tags
+          if (!$('meta[property="og:title"]').length) {
+            $('head').append(`<meta property="og:title" content="${pageTitle}" />`);
+          } else {
+            $('meta[property="og:title"]').attr('content', pageTitle);
+          }
+          
+          if (!$('meta[property="og:description"]').length) {
+            $('head').append(`<meta property="og:description" content="${pageDescription}" />`);
+          } else {
+            $('meta[property="og:description"]').attr('content', pageDescription);
+          }
+          
+          if (!$('meta[property="og:type"]').length) {
+            $('head').append(`<meta property="og:type" content="website" />`);
+          }
+          
+          // Update canonical URL
+          const canonicalUrl = `https://${req.get('host')}/${page}`;
+          if (!$('link[rel="canonical"]').length) {
+            $('head').append(`<link rel="canonical" href="${canonicalUrl}" />`);
+          } else {
+            $('link[rel="canonical"]').attr('href', canonicalUrl);
+          }
+          
+          // Add structured data for SEO (if blog post or tool page)
+          if (isToolPage(page)) {
+            const structuredData = getStructuredData(page, req.get('host') || '');
+            $('head').append(`<script type="application/ld+json">${JSON.stringify(structuredData)}</script>`);
+          }
+          
+          // Send the modified HTML
+          res.send($.html());
+        });
+      }).catch(err => {
+        console.error('Error importing fs module:', err);
+        next();
+      });
+    } catch (error) {
+      console.error('Error in server-side rendering:', error);
+      next();
+    }
+  });*/
+
+  // Helper functions for SSR
+  function getPageTitle(page: string): string {
+    const pageTitles: Record<string, string> = {
+      "": "SEO Analyzer - Free SEO Analysis and Optimization Tools",
+      "domain-age": "Domain Age Checker - Find the Age of Any Website | SEO Analyzer",
+      "domain-authority": "Domain & Page Authority Checker - SEO Metrics | SEO Analyzer",
+      "plagiarism": "Plagiarism Checker - Check Text for Duplicate Content | SEO Analyzer",
+      "schema": "Schema Markup Generator - Structured Data for SEO | SEO Analyzer",
+      "about": "About SEO Analyzer - Our Story and Mission",
+      "features": "SEO Tools and Features - Comprehensive SEO Suite",
+      "results": "SEO Analysis Results - Detailed Website Insights"
+    };
+    
+    return pageTitles[page] || "SEO Analyzer - Free SEO Analysis Tools";
+  }
+  
+  function getPageDescription(page: string): string {
+    const pageDescriptions: Record<string, string> = {
+      "": "Get comprehensive SEO analysis, detailed insights, and actionable recommendations to improve your website ranking and visibility in search engines.",
+      "domain-age": "Check any domain age, creation date, expiry, and registration details with our free Domain Age Checker tool. Important SEO metrics at your fingertips.",
+      "domain-authority": "Check your website Domain and Page Authority scores. Understand your SEO ranking potential and compare with competitors using our free tool.",
+      "plagiarism": "Check your content for plagiarism and duplicate content. Our free tool analyzes your text against billions of web pages to ensure originality.",
+      "schema": "Generate schema markup and structured data for your website to enhance rich snippets in search results and improve SEO visibility.",
+      "about": "Learn about SEO Analyzer, our mission to make SEO accessible for everyone, and how our tools can help improve your website performance.",
+      "features": "Explore all the features and tools offered by SEO Analyzer. From basic SEO analysis to advanced technical SEO optimization.",
+      "results": "Review detailed SEO analysis for your website. Get insights on meta tags, headers, content quality, and technical SEO with actionable recommendations."
+    };
+    
+    return pageDescriptions[page] || "Free SEO tools to analyze and optimize your website for better search engine rankings and visibility.";
+  }
+  
+  function isToolPage(page: string): boolean {
+    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", ""];
+    return toolPages.includes(page);
+  }
+  
+  function getStructuredData(page: string, host: string): object {
+    // Basic structured data for tool pages (FAQPage schema)
+    const baseUrl = `https://${host}`;
+    
+    if (page === "domain-authority") {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Domain Authority Checker",
+        "url": `${baseUrl}/domain-authority`,
+        "applicationCategory": "SEO Tool",
+        "offers": {
+          "@type": "Offer",
+          "price": "0"
+        },
+        "description": "Check your website Domain and Page Authority scores to understand SEO ranking potential.",
+        "featureList": "Domain Authority score, Page Authority score, Spam score, Backlink profile analysis",
+        "operatingSystem": "Any"
+      };
+    }
+    
+    // Default to FAQPage schema with common SEO questions
+    return {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is SEO and why is it important?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SEO (Search Engine Optimization) is the practice of optimizing websites to rank higher in search engine results. It is important because higher rankings lead to more visibility, traffic, and potential customers."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I improve my website SEO?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can improve your website SEO by optimizing meta tags, creating quality content, building quality backlinks, improving site speed, ensuring mobile-friendliness, and using proper header structure."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the most important SEO metrics to track?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Important SEO metrics include organic traffic, keyword rankings, backlink quality and quantity, page load speed, bounce rate, dwell time, and conversion rates."
+          }
+        }
+      ]
+    };
+  }
 
   const httpServer = createServer(app);
   return httpServer;
