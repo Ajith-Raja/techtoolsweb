@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { analyzeSite } from "./seo-analyzer";
+import { analyzeReadability } from "./readability-analyzer";
 import { analyzeSiteSchema } from "@shared/schema";
 import { z } from "zod";
 import * as cheerio from 'cheerio';
@@ -137,6 +138,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoint for readability checking
+  app.post("/api/readability", async (req, res) => {
+    try {
+      const { type, value } = req.body;
+      if (!type || !value || typeof type !== 'string' || typeof value !== 'string') {
+        return res.status(400).json({ message: "Type and value are required" });
+      }
+      
+      if (type !== 'url' && type !== 'content') {
+        return res.status(400).json({ message: "Type must be 'url' or 'content'" });
+      }
+      
+      try {
+        const result = await analyzeReadability(type, value);
+        res.json(result);
+      } catch (analysisError) {
+        console.error('Error analyzing readability:', analysisError);
+        res.status(422).json({ 
+          message: analysisError instanceof Error 
+            ? analysisError.message 
+            : "Failed to analyze readability" 
+        });
+      }
+    } catch (error) {
+      console.error('Error in readability endpoint:', error);
+      res.status(500).json({ message: "Server error analyzing readability" });
+    }
+  });
+  
   // We'll comment out the server-side rendering for now since it may be conflicting with Vite
   // Server-side rendering for blog posts and SEO-critical pages
   /*app.get("/:page", (req: Request, res: Response, next) => {
@@ -217,6 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "domain-authority": "Domain & Page Authority Checker - SEO Metrics | SEO Analyzer",
       "plagiarism": "Plagiarism Checker - Check Text for Duplicate Content | SEO Analyzer",
       "schema": "Schema Markup Generator - Structured Data for SEO | SEO Analyzer",
+      "readability": "Readability Score Checker - Optimize Content for Your Audience | SEO Analyzer",
       "about": "About SEO Analyzer - Our Story and Mission",
       "features": "SEO Tools and Features - Comprehensive SEO Suite",
       "results": "SEO Analysis Results - Detailed Website Insights"
@@ -232,6 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "domain-authority": "Check your website Domain and Page Authority scores. Understand your SEO ranking potential and compare with competitors using our free tool.",
       "plagiarism": "Check your content for plagiarism and duplicate content. Our free tool analyzes your text against billions of web pages to ensure originality.",
       "schema": "Generate schema markup and structured data for your website to enhance rich snippets in search results and improve SEO visibility.",
+      "readability": "Analyze the readability of your content to ensure it's appropriate for your target audience. Get Flesch Reading Ease, grade level scores, and content statistics.",
       "about": "Learn about SEO Analyzer, our mission to make SEO accessible for everyone, and how our tools can help improve your website performance.",
       "features": "Explore all the features and tools offered by SEO Analyzer. From basic SEO analysis to advanced technical SEO optimization.",
       "results": "Review detailed SEO analysis for your website. Get insights on meta tags, headers, content quality, and technical SEO with actionable recommendations."
@@ -241,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   function isToolPage(page: string): boolean {
-    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", ""];
+    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", ""];
     return toolPages.includes(page);
   }
   
@@ -262,6 +294,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         "description": "Check your website Domain and Page Authority scores to understand SEO ranking potential.",
         "featureList": "Domain Authority score, Page Authority score, Spam score, Backlink profile analysis",
+        "operatingSystem": "Any"
+      };
+    }
+    
+    if (page === "readability") {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Readability Score Checker",
+        "url": `${baseUrl}/readability`,
+        "applicationCategory": "Content Tool",
+        "offers": {
+          "@type": "Offer",
+          "price": "0"
+        },
+        "description": "Analyze the readability of your content to ensure it's appropriate for your target audience.",
+        "featureList": "Flesch Reading Ease, Flesch-Kincaid Grade Level, Gunning Fog Index, SMOG Index, word count, sentence count, syllable count, reading time",
         "operatingSystem": "Any"
       };
     }
