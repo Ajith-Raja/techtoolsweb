@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { analyzeSite } from "./seo-analyzer";
 import { analyzeReadability } from "./readability-analyzer";
+import { analyzeKeywordDensity } from "./keyword-analyzer";
 import { analyzeSiteSchema } from "@shared/schema";
 import { z } from "zod";
 import * as cheerio from 'cheerio';
@@ -167,6 +168,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoint for keyword density analysis
+  app.post("/api/keyword-density", async (req, res) => {
+    try {
+      const { type, value, keywords } = req.body;
+      
+      if (!type || !value || typeof type !== 'string' || typeof value !== 'string') {
+        return res.status(400).json({ message: "Type and value are required" });
+      }
+      
+      if (type !== 'url' && type !== 'content') {
+        return res.status(400).json({ message: "Type must be 'url' or 'content'" });
+      }
+      
+      if (!Array.isArray(keywords) || keywords.length === 0) {
+        return res.status(400).json({ message: "Keywords array is required" });
+      }
+      
+      try {
+        const result = await analyzeKeywordDensity(type, value, keywords);
+        res.json(result);
+      } catch (analysisError) {
+        console.error('Error analyzing keyword density:', analysisError);
+        res.status(422).json({ 
+          message: analysisError instanceof Error 
+            ? analysisError.message 
+            : "Failed to analyze keyword density" 
+        });
+      }
+    } catch (error) {
+      console.error('Error in keyword density endpoint:', error);
+      res.status(500).json({ message: "Server error analyzing keyword density" });
+    }
+  });
+  
   // We'll comment out the server-side rendering for now since it may be conflicting with Vite
   // Server-side rendering for blog posts and SEO-critical pages
   /*app.get("/:page", (req: Request, res: Response, next) => {
@@ -248,6 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "plagiarism": "Plagiarism Checker - Check Text for Duplicate Content | SEO Analyzer",
       "schema": "Schema Markup Generator - Structured Data for SEO | SEO Analyzer",
       "readability": "Readability Score Checker - Optimize Content for Your Audience | SEO Analyzer",
+      "keyword-density": "Keyword Density Checker - Optimize Your SEO Keywords | SEO Analyzer",
       "about": "About SEO Analyzer - Our Story and Mission",
       "features": "SEO Tools and Features - Comprehensive SEO Suite",
       "results": "SEO Analysis Results - Detailed Website Insights"
@@ -264,6 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "plagiarism": "Check your content for plagiarism and duplicate content. Our free tool analyzes your text against billions of web pages to ensure originality.",
       "schema": "Generate schema markup and structured data for your website to enhance rich snippets in search results and improve SEO visibility.",
       "readability": "Analyze the readability of your content to ensure it's appropriate for your target audience. Get Flesch Reading Ease, grade level scores, and content statistics.",
+      "keyword-density": "Analyze the keyword density in your content. Optimize your keyword usage for better SEO performance and avoid keyword stuffing penalties.",
       "about": "Learn about SEO Analyzer, our mission to make SEO accessible for everyone, and how our tools can help improve your website performance.",
       "features": "Explore all the features and tools offered by SEO Analyzer. From basic SEO analysis to advanced technical SEO optimization.",
       "results": "Review detailed SEO analysis for your website. Get insights on meta tags, headers, content quality, and technical SEO with actionable recommendations."
@@ -273,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   function isToolPage(page: string): boolean {
-    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", ""];
+    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", ""];
     return toolPages.includes(page);
   }
   
@@ -311,6 +348,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         "description": "Analyze the readability of your content to ensure it's appropriate for your target audience.",
         "featureList": "Flesch Reading Ease, Flesch-Kincaid Grade Level, Gunning Fog Index, SMOG Index, word count, sentence count, syllable count, reading time",
+        "operatingSystem": "Any"
+      };
+    }
+    
+    if (page === "keyword-density") {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Keyword Density Checker",
+        "url": `${baseUrl}/keyword-density`,
+        "applicationCategory": "SEO Tool",
+        "offers": {
+          "@type": "Offer",
+          "price": "0"
+        },
+        "description": "Analyze the keyword density in your content. Optimize your keyword usage for better SEO performance.",
+        "featureList": "Keyword frequency analysis, keyword density percentage, top keywords extraction, reading time estimation, content statistics",
         "operatingSystem": "Any"
       };
     }

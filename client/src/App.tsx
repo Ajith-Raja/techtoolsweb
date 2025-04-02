@@ -12,6 +12,7 @@ import DomainAgeChecker from "./pages/DomainAgeChecker";
 import DomainAuthorityChecker from "./pages/DomainAuthorityChecker";
 import PlagiarismChecker from "./pages/PlagiarismChecker";
 import ReadabilityChecker from "./pages/ReadabilityChecker";
+import KeywordDensityChecker from "./pages/KeywordDensityChecker";
 import About from "./pages/About";
 import Features from "./pages/Features";
 
@@ -28,6 +29,7 @@ function Router() {
           <Route path="/domain-authority" component={DomainAuthorityChecker} />
           <Route path="/plagiarism" component={PlagiarismChecker} />
           <Route path="/readability" component={ReadabilityChecker} />
+          <Route path="/keyword-density" component={KeywordDensityChecker} />
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
           <Route component={NotFound} />
