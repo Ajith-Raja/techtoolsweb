@@ -11,6 +11,7 @@ import {
   Gauge,
   Book,
   Percent,
+  Type,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,6 +72,11 @@ export function Navbar() {
       name: "Keyword Density",
       href: "/keyword-density",
       icon: <Percent className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Font Generator",
+      href: "/font-generator",
+      icon: <Type className="mr-2 h-4 w-4" />,
     },
   ];
 

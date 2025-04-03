@@ -284,6 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "schema": "Schema Markup Generator - Structured Data for SEO | SEO Analyzer",
       "readability": "Readability Score Checker - Optimize Content for Your Audience | SEO Analyzer",
       "keyword-density": "Keyword Density Checker - Optimize Your SEO Keywords | SEO Analyzer",
+      "font-generator": "Web Safe Font Generator - Create Custom Font Styles | SEO Analyzer",
       "about": "About SEO Analyzer - Our Story and Mission",
       "features": "SEO Tools and Features - Comprehensive SEO Suite",
       "results": "SEO Analysis Results - Detailed Website Insights"
@@ -301,6 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "schema": "Generate schema markup and structured data for your website to enhance rich snippets in search results and improve SEO visibility.",
       "readability": "Analyze the readability of your content to ensure it's appropriate for your target audience. Get Flesch Reading Ease, grade level scores, and content statistics.",
       "keyword-density": "Analyze the keyword density in your content. Optimize your keyword usage for better SEO performance and avoid keyword stuffing penalties.",
+      "font-generator": "Create custom web-safe font styles for your website. Preview fonts with different sizes, weights, and styles, then generate the CSS code you need.",
       "about": "Learn about SEO Analyzer, our mission to make SEO accessible for everyone, and how our tools can help improve your website performance.",
       "features": "Explore all the features and tools offered by SEO Analyzer. From basic SEO analysis to advanced technical SEO optimization.",
       "results": "Review detailed SEO analysis for your website. Get insights on meta tags, headers, content quality, and technical SEO with actionable recommendations."
@@ -310,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   function isToolPage(page: string): boolean {
-    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", ""];
+    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", "font-generator", ""];
     return toolPages.includes(page);
   }
   
@@ -365,6 +367,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         "description": "Analyze the keyword density in your content. Optimize your keyword usage for better SEO performance.",
         "featureList": "Keyword frequency analysis, keyword density percentage, top keywords extraction, reading time estimation, content statistics",
+        "operatingSystem": "Any"
+      };
+    }
+    
+    if (page === "font-generator") {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Web Safe Font Generator",
+        "url": `${baseUrl}/font-generator`,
+        "applicationCategory": "Web Design Tool",
+        "offers": {
+          "@type": "Offer",
+          "price": "0"
+        },
+        "description": "Create custom web-safe font styles for your website. Preview fonts with different sizes, weights, and styles, then generate the CSS code you need.",
+        "featureList": "Font family selection, size adjustment, style options (bold, italic, underline), live preview, CSS code generation",
         "operatingSystem": "Any"
       };
     }
