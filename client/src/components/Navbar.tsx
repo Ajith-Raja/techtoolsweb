@@ -37,11 +37,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ReactNode;
+  premium?: boolean;
+}
+
 export function Navbar() {
   const [location] = useLocation();
   const { user, logoutMutation, isLoading } = useAuth();
 
-  const mainNavigation = [
+  const mainNavigation: NavItem[] = [
     { name: "Home", href: "/", icon: <HomeIcon className="mr-2 h-4 w-4" /> },
     {
       name: "About",
@@ -50,7 +57,7 @@ export function Navbar() {
     },
   ];
 
-  const toolsNavigation = [
+  const toolsNavigation: NavItem[] = [
     {
       name: "Plagiarism Checker",
       href: "/plagiarism",
@@ -100,11 +107,12 @@ export function Navbar() {
       name: "Pre-Launch Audit",
       href: "/pre-launch-audit",
       icon: <CheckSquare className="mr-2 h-4 w-4" />,
+      premium: true,
     },
   ];
 
   // Combined navigation for mobile view
-  const allNavigation = [...mainNavigation, ...toolsNavigation];
+  const allNavigation: NavItem[] = [...mainNavigation, ...toolsNavigation];
 
   const isActive = (path: string) => location === path;
   const isToolActive = () =>
@@ -172,6 +180,11 @@ export function Navbar() {
                       >
                         {item.icon}
                         {item.name}
+                        {item.premium && (
+                          <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                            Premium
+                          </span>
+                        )}
                       </Link>
                     </DropdownMenuItem>
                   ))}
@@ -264,6 +277,11 @@ export function Navbar() {
                       >
                         {item.icon}
                         {item.name}
+                        {item.premium && (
+                          <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                            Premium
+                          </span>
+                        )}
                       </Link>
                     ))}
                     
