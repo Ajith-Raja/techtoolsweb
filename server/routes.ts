@@ -285,6 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "readability": "Readability Score Checker - Optimize Content for Your Audience | SEO Analyzer",
       "keyword-density": "Keyword Density Checker - Optimize Your SEO Keywords | SEO Analyzer",
       "font-generator": "Web Safe Font Generator - Create Custom Font Styles | SEO Analyzer",
+      "image-compressor": "Image Compressor - Optimize Images for Web Performance | SEO Analyzer",
       "about": "About SEO Analyzer - Our Story and Mission",
       "features": "SEO Tools and Features - Comprehensive SEO Suite",
       "results": "SEO Analysis Results - Detailed Website Insights"
@@ -303,6 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "readability": "Analyze the readability of your content to ensure it's appropriate for your target audience. Get Flesch Reading Ease, grade level scores, and content statistics.",
       "keyword-density": "Analyze the keyword density in your content. Optimize your keyword usage for better SEO performance and avoid keyword stuffing penalties.",
       "font-generator": "Create custom web-safe font styles for your website. Preview fonts with different sizes, weights, and styles, then generate the CSS code you need.",
+      "image-compressor": "Optimize your images for better web performance. Reduce file size while maintaining quality to improve page load speed and SEO rankings.",
       "about": "Learn about SEO Analyzer, our mission to make SEO accessible for everyone, and how our tools can help improve your website performance.",
       "features": "Explore all the features and tools offered by SEO Analyzer. From basic SEO analysis to advanced technical SEO optimization.",
       "results": "Review detailed SEO analysis for your website. Get insights on meta tags, headers, content quality, and technical SEO with actionable recommendations."
@@ -312,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   function isToolPage(page: string): boolean {
-    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", "font-generator", ""];
+    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", "font-generator", "image-compressor", ""];
     return toolPages.includes(page);
   }
   
@@ -384,6 +386,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         "description": "Create custom web-safe font styles for your website. Preview fonts with different sizes, weights, and styles, then generate the CSS code you need.",
         "featureList": "Font family selection, size adjustment, style options (bold, italic, underline), live preview, CSS code generation",
+        "operatingSystem": "Any"
+      };
+    }
+    
+    if (page === "image-compressor") {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Image Compressor",
+        "url": `${baseUrl}/image-compressor`,
+        "applicationCategory": "Web Performance Tool",
+        "offers": {
+          "@type": "Offer",
+          "price": "0"
+        },
+        "description": "Optimize your images for better web performance. Reduce file size while maintaining quality to improve page load speed and SEO rankings.",
+        "featureList": "Image compression, quality control, resize options, before/after comparison, file size reduction statistics",
         "operatingSystem": "Any"
       };
     }

@@ -14,6 +14,7 @@ import PlagiarismChecker from "./pages/PlagiarismChecker";
 import ReadabilityChecker from "./pages/ReadabilityChecker";
 import KeywordDensityChecker from "./pages/KeywordDensityChecker";
 import FontGenerator from "./pages/FontGenerator";
+import ImageCompressor from "./pages/ImageCompressor";
 import About from "./pages/About";
 import Features from "./pages/Features";
 
@@ -32,6 +33,7 @@ function Router() {
           <Route path="/readability" component={ReadabilityChecker} />
           <Route path="/keyword-density" component={KeywordDensityChecker} />
           <Route path="/font-generator" component={FontGenerator} />
+          <Route path="/image-compressor" component={ImageCompressor} />
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
           <Route component={NotFound} />

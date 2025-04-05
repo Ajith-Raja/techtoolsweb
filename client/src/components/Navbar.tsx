@@ -12,6 +12,7 @@ import {
   Book,
   Percent,
   Type,
+  Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,6 +78,11 @@ export function Navbar() {
       name: "Font Generator",
       href: "/font-generator",
       icon: <Type className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Image Compressor",
+      href: "/image-compressor",
+      icon: <Image className="mr-2 h-4 w-4" />,
     },
   ];
 
