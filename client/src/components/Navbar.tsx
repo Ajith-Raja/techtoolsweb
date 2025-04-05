@@ -14,6 +14,7 @@ import {
   Type,
   Image,
   Languages,
+  CheckSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -89,6 +90,11 @@ export function Navbar() {
       name: "Transliterate",
       href: "/transliterate",
       icon: <Languages className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Pre-Launch Audit",
+      href: "/pre-launch-audit",
+      icon: <CheckSquare className="mr-2 h-4 w-4" />,
     },
   ];
 

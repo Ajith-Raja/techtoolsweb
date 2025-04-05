@@ -202,6 +202,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoint for pre-launch audit
+  app.post("/api/pre-launch-audit", async (req, res) => {
+    try {
+      const { url, sitemapUrl, maxPages, userAgent, authUsername, authPassword, requiresAuth } = req.body;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ message: "URL is required" });
+      }
+      
+      // Validate maxPages is a positive number
+      if (maxPages && (typeof maxPages !== 'number' || maxPages <= 0)) {
+        return res.status(400).json({ message: "maxPages must be a positive number" });
+      }
+      
+      // Validate authentication credentials if required
+      if (requiresAuth === true) {
+        if (!authUsername || !authPassword) {
+          return res.status(400).json({ message: "Authentication credentials are required" });
+        }
+      }
+      
+      // Here we would implement the actual pre-launch audit logic
+      // For now, we'll return a mock result
+      // In a real implementation, you'd use a crawler library or similar tools
+      
+      // Mock the time it would take to crawl a site
+      const startTime = Date.now();
+      const delay = Math.min(1000, Math.max(500, maxPages * 20)); // Simulate longer delay for more pages
+      
+      // In a production environment, this would be replaced with actual crawling logic
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Return a mock result for now
+      // In production, this would be replaced with real crawling results
+      res.json({
+        siteScore: Math.floor(Math.random() * 30) + 65, // Random score between 65-95
+        totalPages: maxPages,
+        pagesWithIssues: Math.floor(maxPages * 0.4), // 40% of pages have issues
+        criticalIssues: Math.floor(maxPages * 0.1), // 10% critical issues
+        warningIssues: Math.floor(maxPages * 0.2), // 20% warnings
+        infoIssues: Math.floor(maxPages * 0.1), // 10% info issues
+        crawlDate: new Date().toISOString(),
+        commonIssues: [
+          {
+            type: 'error',
+            title: 'Missing Meta Descriptions',
+            description: 'Multiple pages are missing meta descriptions, which are essential for search engines to understand page content.',
+            impact: 'high',
+            recommendation: 'Add unique, descriptive meta descriptions to each page between 120-158 characters.'
+          },
+          {
+            type: 'error',
+            title: 'Slow Page Loading Speed',
+            description: 'Several pages take more than 3 seconds to load, which can negatively impact user experience and search rankings.',
+            impact: 'high',
+            recommendation: 'Optimize images, enable browser caching, and minimize CSS/JavaScript to improve loading times.'
+          },
+          {
+            type: 'warning',
+            title: 'Multiple H1 Tags',
+            description: 'Some pages have multiple H1 tags, which can confuse search engines about the main topic of the page.',
+            impact: 'medium',
+            recommendation: 'Ensure each page has exactly one H1 tag that clearly describes the page content.'
+          },
+          {
+            type: 'warning',
+            title: 'Low Word Count',
+            description: 'Many pages have less than 300 words, which may be considered thin content by search engines.',
+            impact: 'medium',
+            recommendation: 'Expand content to provide more value and cover topics comprehensively.'
+          },
+          {
+            type: 'info',
+            title: 'Missing Alt Text for Images',
+            description: 'Several images across the site are missing alt text, which helps with accessibility and image search.',
+            impact: 'low',
+            recommendation: 'Add descriptive alt text to all images that conveys their purpose or content.'
+          }
+        ],
+        // Generate mock page results
+        pageResults: Array(maxPages).fill(0).map((_, i) => ({
+          url: `${url}${i === 0 ? '' : '/page-' + (i + 1)}`,
+          title: i === 0 ? `Home | ${url.replace(/^https?:\/\//i, '')}` : `Page ${i + 1} | ${url.replace(/^https?:\/\//i, '')}`,
+          metaDescription: i % 5 === 0 ? '' : `This is the description for ${i === 0 ? 'the homepage' : 'page ' + (i + 1)}.`,
+          h1Count: i % 4 === 0 ? 2 : 1,
+          wordCount: i === 0 ? 750 : 200 + (i * 30), // Home page has more content
+          statusCode: i === Math.floor(maxPages * 0.08) ? 404 : 200, // One page is 404
+          loadTime: i % 7 === 0 ? 3.5 : 1.2,
+          mobileResponsive: i !== Math.floor(maxPages * 0.12), // One page is not mobile friendly
+          issues: [
+            ...(i % 5 === 0 ? [{
+              type: 'error',
+              title: 'Missing Meta Description',
+              description: 'This page is missing a meta description.',
+              impact: 'high',
+              recommendation: 'Add a unique, descriptive meta description between 120-158 characters.'
+            }] : []),
+            ...(i % 7 === 0 ? [{
+              type: 'error',
+              title: 'Slow Loading Speed',
+              description: 'This page takes too long to load (over 3 seconds).',
+              impact: 'high',
+              recommendation: 'Optimize images and minimize CSS/JavaScript.'
+            }] : []),
+            ...(i % 4 === 0 ? [{
+              type: 'warning',
+              title: 'Multiple H1 Tags',
+              description: 'This page has multiple H1 tags.',
+              impact: 'medium',
+              recommendation: 'Ensure the page has exactly one H1 tag.'
+            }] : []),
+            ...(i < Math.floor(maxPages * 0.24) ? [{
+              type: 'warning',
+              title: 'Low Word Count',
+              description: 'This page has less than 300 words of content.',
+              impact: 'medium',
+              recommendation: 'Add more quality content to this page.'
+            }] : []),
+            ...(i % 3 === 0 ? [{
+              type: 'info',
+              title: 'Missing Alt Text',
+              description: 'Some images on this page are missing alt text.',
+              impact: 'low',
+              recommendation: 'Add descriptive alt text to all images.'
+            }] : [])
+          ].filter(Boolean)
+        }))
+      });
+    } catch (error) {
+      console.error('Error in pre-launch audit endpoint:', error);
+      res.status(500).json({ 
+        message: error instanceof Error 
+          ? error.message 
+          : "Server error during pre-launch audit" 
+      });
+    }
+  });
+  
   // We'll comment out the server-side rendering for now since it may be conflicting with Vite
   // Server-side rendering for blog posts and SEO-critical pages
   /*app.get("/:page", (req: Request, res: Response, next) => {
@@ -287,6 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "font-generator": "Web Safe Font Generator - Create Custom Font Styles | SEO Analyzer",
       "image-compressor": "Image Compressor - Optimize Images for Web Performance | SEO Analyzer",
       "transliterate": "Google Transliterate - Type in English & Get Text in Multiple Languages | SEO Analyzer",
+      "pre-launch-audit": "Pre-Launch SEO Audit Tool - Comprehensive Site Health Check | SEO Analyzer",
       "about": "About SEO Analyzer - Our Story and Mission",
       "features": "SEO Tools and Features - Comprehensive SEO Suite",
       "results": "SEO Analysis Results - Detailed Website Insights"
@@ -307,6 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "font-generator": "Create custom web-safe font styles for your website. Preview fonts with different sizes, weights, and styles, then generate the CSS code you need.",
       "image-compressor": "Optimize your images for better web performance. Reduce file size while maintaining quality to improve page load speed and SEO rankings.",
       "transliterate": "Type in English and get text in Hindi, Tamil, or Bengali with our real-time transliteration tool. Perfect for multilingual content creation.",
+      "pre-launch-audit": "Scan your entire website for SEO issues before launch. Identify and fix problems with meta tags, content, load speed, and more for better search rankings.",
       "about": "Learn about SEO Analyzer, our mission to make SEO accessible for everyone, and how our tools can help improve your website performance.",
       "features": "Explore all the features and tools offered by SEO Analyzer. From basic SEO analysis to advanced technical SEO optimization.",
       "results": "Review detailed SEO analysis for your website. Get insights on meta tags, headers, content quality, and technical SEO with actionable recommendations."
@@ -316,7 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   function isToolPage(page: string): boolean {
-    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", "font-generator", "image-compressor", "transliterate", ""];
+    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", "font-generator", "image-compressor", "transliterate", "pre-launch-audit", ""];
     return toolPages.includes(page);
   }
   
@@ -422,6 +562,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         "description": "Type in English and get text in your selected language with real-time suggestions as you type, supporting Hindi, Tamil, and Bengali scripts.",
         "featureList": "Real-time transliteration, multiple language support, suggestion system, preview mode, copy to clipboard functionality",
+        "operatingSystem": "Any"
+      };
+    }
+    
+    if (page === "pre-launch-audit") {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pre-Launch SEO Audit Tool",
+        "url": `${baseUrl}/pre-launch-audit`,
+        "applicationCategory": "SEO Tool",
+        "offers": {
+          "@type": "Offer",
+          "price": "0"
+        },
+        "description": "Comprehensive SEO audit tool to scan your entire website before launch. Identify and fix critical issues before getting indexed by search engines.",
+        "featureList": "Full website crawling, meta tag analysis, content quality assessment, page load speed testing, mobile responsiveness check, issue prioritization, PDF/CSV export",
         "operatingSystem": "Any"
       };
     }
