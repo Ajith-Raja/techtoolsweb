@@ -7,6 +7,13 @@ import {
 import { User, InsertUser } from "@shared/schema";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  signInWithPopup, 
+  signInWithRedirect, 
+  getRedirectResult,
+  GoogleAuthProvider
+} from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 
 type AuthContextType = {
   user: User | null;
@@ -15,6 +22,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<Omit<User, 'password'>, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<Omit<User, 'password'>, Error, InsertUser>;
+  signInWithGoogle: () => Promise<void>;
 };
 
 type LoginData = {
@@ -107,6 +115,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+  
+  // Google Sign In functionality
+  const googleSignInMutation = useMutation({
+    mutationFn: async (idToken: string) => {
+      const res = await apiRequest("POST", "/api/auth/google", { idToken });
+      return await res.json();
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Logged in successfully",
+        description: `Welcome, ${user.displayName || user.username}!`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Google login failed",
+        description: error.message || "Failed to authenticate with Google",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Function to sign in with Google
+  const signInWithGoogle = async () => {
+    // Check if the Firebase API keys are configured
+    const isFirebaseConfigured = 
+      import.meta.env.VITE_FIREBASE_API_KEY && 
+      import.meta.env.VITE_FIREBASE_PROJECT_ID && 
+      import.meta.env.VITE_FIREBASE_APP_ID;
+      
+    if (!isFirebaseConfigured) {
+      toast({
+        title: "Firebase not configured",
+        description: "Google Sign In is not available. Firebase credentials are missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      
+      if (credential) {
+        const idToken = await result.user.getIdToken();
+        googleSignInMutation.mutate(idToken);
+      }
+    } catch (error) {
+      console.error("Google sign in error:", error);
+      toast({
+        title: "Google login failed",
+        description: error instanceof Error ? error.message : "Failed to authenticate with Google",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -117,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        signInWithGoogle,
       }}
     >
       {children}
