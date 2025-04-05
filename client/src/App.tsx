@@ -17,6 +17,7 @@ import FontGenerator from "./pages/FontGenerator";
 import ImageCompressor from "./pages/ImageCompressor";
 import About from "./pages/About";
 import Features from "./pages/Features";
+import FaviconGenerator from "./pages/FaviconGenerator";
 
 function Router() {
   return (
