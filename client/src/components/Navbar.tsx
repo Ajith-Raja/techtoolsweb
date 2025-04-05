@@ -15,6 +15,9 @@ import {
   Image,
   Languages,
   CheckSquare,
+  User,
+  LogOut,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +29,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +39,7 @@ import {
 
 export function Navbar() {
   const [location] = useLocation();
+  const { user, logoutMutation, isLoading } = useAuth();
 
   const mainNavigation = [
     { name: "Home", href: "/", icon: <HomeIcon className="mr-2 h-4 w-4" /> },
@@ -172,6 +177,55 @@ export function Navbar() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              
+              {/* Authentication */}
+              <div className="ml-6 flex items-center">
+                {isLoading ? (
+                  <Button disabled variant="ghost">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </Button>
+                ) : user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline-block">
+                          {user.displayName || user.username}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => logoutMutation.mutate()}
+                        disabled={logoutMutation.isPending}
+                        className="cursor-pointer"
+                      >
+                        {logoutMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Logging out...
+                          </>
+                        ) : (
+                          <>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Logout
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <div className="flex space-x-2">
+                    <Link href="/auth">
+                      <Button variant="ghost">Login</Button>
+                    </Link>
+                    <Link href="/auth">
+                      <Button variant="default">Sign Up</Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -212,6 +266,60 @@ export function Navbar() {
                         {item.name}
                       </Link>
                     ))}
+                    
+                    {/* Authentication in mobile menu */}
+                    <div className="border-t pt-4 mt-4">
+                      {isLoading ? (
+                        <div className="px-3 py-3 flex items-center">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <span>Loading...</span>
+                        </div>
+                      ) : user ? (
+                        <>
+                          <div className="px-3 py-3 flex items-center text-primary font-medium">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>{user.displayName || user.username}</span>
+                          </div>
+                          <Button
+                            onClick={() => logoutMutation.mutate()}
+                            disabled={logoutMutation.isPending}
+                            variant="ghost"
+                            className="w-full justify-start px-3 py-3 rounded-md text-base font-medium"
+                          >
+                            {logoutMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Logging out...
+                              </>
+                            ) : (
+                              <>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Logout
+                              </>
+                            )}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Link href="/auth" className="block">
+                            <Button 
+                              variant="ghost" 
+                              className="w-full justify-start px-3 py-3 rounded-md text-base font-medium"
+                            >
+                              Login
+                            </Button>
+                          </Link>
+                          <Link href="/auth" className="block mt-2">
+                            <Button 
+                              variant="default" 
+                              className="w-full justify-start px-3 py-3 rounded-md text-base font-medium"
+                            >
+                              Sign Up
+                            </Button>
+                          </Link>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </SheetContent>

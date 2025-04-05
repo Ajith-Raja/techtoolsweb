@@ -3,11 +3,15 @@ import { createServer, type Server } from "http";
 import { analyzeSite } from "./seo-analyzer";
 import { analyzeReadability } from "./readability-analyzer";
 import { analyzeKeywordDensity } from "./keyword-analyzer";
+import { checkPlagiarism, plagiarismCheckSchema } from "./plagiarism-checker";
 import { analyzeSiteSchema } from "@shared/schema";
 import { z } from "zod";
 import * as cheerio from 'cheerio';
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication routes
+  setupAuth(app);
   app.post("/api/analyze", async (req, res) => {
     try {
       const { url } = analyzeSiteSchema.parse(req.body);
@@ -202,8 +206,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // API endpoint for pre-launch audit
+  // API endpoint for plagiarism checking
+  app.post("/api/plagiarism-check", async (req, res) => {
+    try {
+      // Validate input using the schema
+      const input = plagiarismCheckSchema.parse(req.body);
+      
+      try {
+        const result = await checkPlagiarism(input);
+        res.json(result);
+      } catch (analysisError) {
+        console.error('Error checking plagiarism:', analysisError);
+        res.status(422).json({ 
+          message: analysisError instanceof Error 
+            ? analysisError.message 
+            : "Failed to check plagiarism" 
+        });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors[0].message });
+      } else {
+        console.error('Error in plagiarism check endpoint:', error);
+        res.status(500).json({ 
+          message: error instanceof Error 
+            ? error.message 
+            : "Server error checking plagiarism" 
+        });
+      }
+    }
+  });
+  
+  // API endpoint for pre-launch audit (premium feature - requires authentication)
   app.post("/api/pre-launch-audit", async (req, res) => {
+    // Check if the user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required for this premium feature" });
+    }
     try {
       const { url, sitemapUrl, maxPages, userAgent, authUsername, authPassword, requiresAuth } = req.body;
       

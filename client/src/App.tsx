@@ -19,6 +19,9 @@ import Transliterate from "./pages/Transliterate";
 import About from "./pages/About";
 import Features from "./pages/Features";
 import PreLaunchAudit from "./pages/PreLaunchAudit";
+import AuthPage from "./pages/auth-page";
+import { AuthProvider } from "./hooks/use-auth";
+import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
@@ -37,9 +40,11 @@ function Router() {
           <Route path="/font-generator" component={FontGenerator} />
           <Route path="/image-compressor" component={ImageCompressor} />
           <Route path="/transliterate" component={Transliterate} />
-          <Route path="/pre-launch-audit" component={PreLaunchAudit} />
+          {/* Premium feature - requires authentication */}
+          <ProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
+          <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -51,8 +56,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
