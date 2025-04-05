@@ -84,6 +84,11 @@ export function Navbar() {
       href: "/image-compressor",
       icon: <Image className="mr-2 h-4 w-4" />,
     },
+    {
+      name: "Favicon Generator",
+      href: "/favicon-generator",
+      icon: <Image className="mr-2 h-4 w-4" />,
+    },
   ];
 
   // Combined navigation for mobile view

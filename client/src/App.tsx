@@ -34,6 +34,7 @@ function Router() {
           <Route path="/keyword-density" component={KeywordDensityChecker} />
           <Route path="/font-generator" component={FontGenerator} />
           <Route path="/image-compressor" component={ImageCompressor} />
+          <Route path="/favicon-generator" component={FaviconGenerator} />
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
           <Route component={NotFound} />
