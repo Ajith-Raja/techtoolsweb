@@ -15,9 +15,9 @@ import ReadabilityChecker from "./pages/ReadabilityChecker";
 import KeywordDensityChecker from "./pages/KeywordDensityChecker";
 import FontGenerator from "./pages/FontGenerator";
 import ImageCompressor from "./pages/ImageCompressor";
+import Transliterate from "./pages/Transliterate";
 import About from "./pages/About";
 import Features from "./pages/Features";
-import FaviconGenerator from "./pages/FaviconGenerator";
 
 function Router() {
   return (
@@ -35,7 +35,7 @@ function Router() {
           <Route path="/keyword-density" component={KeywordDensityChecker} />
           <Route path="/font-generator" component={FontGenerator} />
           <Route path="/image-compressor" component={ImageCompressor} />
-          <Route path="/favicon-generator" component={FaviconGenerator} />
+          <Route path="/transliterate" component={Transliterate} />
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
           <Route component={NotFound} />

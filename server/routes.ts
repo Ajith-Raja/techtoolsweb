@@ -286,6 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "keyword-density": "Keyword Density Checker - Optimize Your SEO Keywords | SEO Analyzer",
       "font-generator": "Web Safe Font Generator - Create Custom Font Styles | SEO Analyzer",
       "image-compressor": "Image Compressor - Optimize Images for Web Performance | SEO Analyzer",
+      "transliterate": "Google Transliterate - Type in English & Get Text in Multiple Languages | SEO Analyzer",
       "about": "About SEO Analyzer - Our Story and Mission",
       "features": "SEO Tools and Features - Comprehensive SEO Suite",
       "results": "SEO Analysis Results - Detailed Website Insights"
@@ -305,6 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "keyword-density": "Analyze the keyword density in your content. Optimize your keyword usage for better SEO performance and avoid keyword stuffing penalties.",
       "font-generator": "Create custom web-safe font styles for your website. Preview fonts with different sizes, weights, and styles, then generate the CSS code you need.",
       "image-compressor": "Optimize your images for better web performance. Reduce file size while maintaining quality to improve page load speed and SEO rankings.",
+      "transliterate": "Type in English and get text in Hindi, Tamil, or Bengali with our real-time transliteration tool. Perfect for multilingual content creation.",
       "about": "Learn about SEO Analyzer, our mission to make SEO accessible for everyone, and how our tools can help improve your website performance.",
       "features": "Explore all the features and tools offered by SEO Analyzer. From basic SEO analysis to advanced technical SEO optimization.",
       "results": "Review detailed SEO analysis for your website. Get insights on meta tags, headers, content quality, and technical SEO with actionable recommendations."
@@ -314,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   function isToolPage(page: string): boolean {
-    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", "font-generator", "image-compressor", ""];
+    const toolPages = ["domain-age", "domain-authority", "plagiarism", "schema", "readability", "keyword-density", "font-generator", "image-compressor", "transliterate", ""];
     return toolPages.includes(page);
   }
   
@@ -403,6 +405,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         "description": "Optimize your images for better web performance. Reduce file size while maintaining quality to improve page load speed and SEO rankings.",
         "featureList": "Image compression, quality control, resize options, before/after comparison, file size reduction statistics",
+        "operatingSystem": "Any"
+      };
+    }
+    
+    if (page === "transliterate") {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Google Transliterate Tool",
+        "url": `${baseUrl}/transliterate`,
+        "applicationCategory": "Language Tool",
+        "offers": {
+          "@type": "Offer",
+          "price": "0"
+        },
+        "description": "Type in English and get text in your selected language with real-time suggestions as you type, supporting Hindi, Tamil, and Bengali scripts.",
+        "featureList": "Real-time transliteration, multiple language support, suggestion system, preview mode, copy to clipboard functionality",
         "operatingSystem": "Any"
       };
     }

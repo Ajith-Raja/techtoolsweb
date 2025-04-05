@@ -13,6 +13,7 @@ import {
   Percent,
   Type,
   Image,
+  Languages,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,9 +86,9 @@ export function Navbar() {
       icon: <Image className="mr-2 h-4 w-4" />,
     },
     {
-      name: "Favicon Generator",
-      href: "/favicon-generator",
-      icon: <Image className="mr-2 h-4 w-4" />,
+      name: "Transliterate",
+      href: "/transliterate",
+      icon: <Languages className="mr-2 h-4 w-4" />,
     },
   ];
 
