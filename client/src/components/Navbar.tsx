@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -230,10 +231,10 @@ export function Navbar() {
                   </DropdownMenu>
                 ) : (
                   <div className="flex space-x-2">
-                    <Link href="/auth">
+                    <Link href="/login">
                       <Button variant="ghost">Login</Button>
                     </Link>
-                    <Link href="/auth">
+                    <Link href="/signup">
                       <Button variant="default">Sign Up</Button>
                     </Link>
                   </div>
@@ -255,13 +256,16 @@ export function Navbar() {
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[350px]">
-                <SheetHeader className="mb-4">
+              <SheetContent side="right" className="w-[280px] sm:w-[350px] p-0 flex flex-col h-full">
+                <SheetHeader className="p-6 pb-2">
                   <SheetTitle className="text-left text-primary">
                     SEO Analyzer
                   </SheetTitle>
+                  <SheetDescription>
+                    Access all SEO tools
+                  </SheetDescription>
                 </SheetHeader>
-                <div className="py-4">
+                <div className="flex-grow overflow-y-auto p-6 pt-2">
                   <div className="space-y-1">
                     {allNavigation.map((item) => (
                       <Link
@@ -284,7 +288,7 @@ export function Navbar() {
                         )}
                       </Link>
                     ))}
-                    
+                  
                     {/* Authentication in mobile menu */}
                     <div className="border-t pt-4 mt-4">
                       {isLoading ? (
@@ -319,7 +323,7 @@ export function Navbar() {
                         </>
                       ) : (
                         <>
-                          <Link href="/auth" className="block">
+                          <Link href="/login" className="block">
                             <Button 
                               variant="ghost" 
                               className="w-full justify-start px-3 py-3 rounded-md text-base font-medium"
@@ -327,7 +331,7 @@ export function Navbar() {
                               Login
                             </Button>
                           </Link>
-                          <Link href="/auth" className="block mt-2">
+                          <Link href="/signup" className="block mt-2">
                             <Button 
                               variant="default" 
                               className="w-full justify-start px-3 py-3 rounded-md text-base font-medium"

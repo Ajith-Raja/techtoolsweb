@@ -20,6 +20,8 @@ import About from "./pages/About";
 import Features from "./pages/Features";
 import PreLaunchAudit from "./pages/PreLaunchAudit";
 import AuthPage from "./pages/auth-page";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 
@@ -45,6 +47,8 @@ function Router() {
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
           <Route path="/auth" component={AuthPage} />
+          <Route path="/login" component={Login} />
+          <Route path="/signup" component={Signup} />
           <Route component={NotFound} />
         </Switch>
       </main>

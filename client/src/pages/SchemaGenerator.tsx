@@ -1,10 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Check, Copy } from "lucide-react";
 
 const schemaTypes = [
   { value: "article", label: "Article / BlogPost" },
@@ -22,9 +24,28 @@ const schemaTypes = [
 export default function SchemaGenerator() {
   const [selectedType, setSelectedType] = useState("");
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [copied, setCopied] = useState(false);
+
+  // Clear form data when schema type changes
+  const handleTypeChange = (value: string) => {
+    setSelectedType(value);
+    setFormData({});
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const copyToClipboard = async () => {
+    if (selectedType) {
+      try {
+        await navigator.clipboard.writeText(getSchemaMarkup());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+      }
+    }
   };
 
   const getSchemaMarkup = () => {
@@ -202,7 +223,7 @@ export default function SchemaGenerator() {
         <CardContent>
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-4">
-              <Select onValueChange={setSelectedType}>
+              <Select onValueChange={handleTypeChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Schema Type" />
                 </SelectTrigger>
@@ -223,8 +244,31 @@ export default function SchemaGenerator() {
             </div>
 
             <div>
-              <Label>Preview</Label>
-              <pre className="p-4 bg-slate-100 rounded-lg overflow-auto max-h-[600px]">
+              <div className="flex justify-between items-center mb-2">
+                <Label>Preview</Label>
+                {selectedType && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={copyToClipboard}
+                    className="flex items-center gap-1 text-xs" 
+                    disabled={copied}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3 w-3" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              <pre className="p-4 bg-slate-100 rounded-lg overflow-auto max-h-[600px] relative">
                 {selectedType ? getSchemaMarkup() : "Select a schema type to preview"}
               </pre>
             </div>
