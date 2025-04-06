@@ -46,7 +46,6 @@ function Router() {
           <ProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
-          <Route path="/auth" component={AuthPage} />
           <Route path="/login" component={Login} />
           <Route path="/signup" component={Signup} />
           <Route component={NotFound} />

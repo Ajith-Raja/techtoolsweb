@@ -19,7 +19,7 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
       ) : user ? (
         <Component />
       ) : (
-        <Redirect to="/auth" />
+        <Redirect to="/login" />
       )}
     </Route>
   );
