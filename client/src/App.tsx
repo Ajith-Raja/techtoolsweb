@@ -16,6 +16,7 @@ import KeywordDensityChecker from "./pages/KeywordDensityChecker";
 import FontGenerator from "./pages/FontGenerator";
 import ImageCompressor from "./pages/ImageCompressor";
 import Transliterate from "./pages/Transliterate";
+import DiffChecker from "./pages/DiffChecker";
 import About from "./pages/About";
 import Features from "./pages/Features";
 import PreLaunchAudit from "./pages/PreLaunchAudit";
@@ -42,6 +43,7 @@ function Router() {
           <Route path="/font-generator" component={FontGenerator} />
           <Route path="/image-compressor" component={ImageCompressor} />
           <Route path="/transliterate" component={Transliterate} />
+          <Route path="/diff-checker" component={DiffChecker} />
           {/* Premium feature - requires authentication */}
           <ProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
           <Route path="/about" component={About} />

@@ -18,6 +18,7 @@ import {
   User,
   LogOut,
   Loader2,
+  GitCompare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +56,11 @@ export function Navbar() {
       name: "About",
       href: "/about",
       icon: <BookOpen className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Diff Checker",
+      href: "/diff-checker",
+      icon: <GitCompare className="mr-2 h-4 w-4" />,
     },
   ];
 
