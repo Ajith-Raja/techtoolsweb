@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Copy, GitCompare } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function DiffChecker() {
   const [originalText, setOriginalText] = useState<string>("");
@@ -53,8 +54,14 @@ export default function DiffChecker() {
           modifiedLines[modifiedIndex] === lcs[lcsIndex]) {
         result.push(
           <div key={`unchanged-${i++}`} className="flex">
-            <div className="w-1/2 py-1 px-2 bg-gray-50 border-r">{originalLines[originalIndex]}</div>
-            <div className="w-1/2 py-1 px-2 bg-gray-50">{modifiedLines[modifiedIndex]}</div>
+            <div className="w-1/2 py-1 px-2 bg-gray-50 border-r flex">
+              <span className="w-8 text-gray-500 inline-block text-right mr-3">{originalIndex + 1}</span>
+              {originalLines[originalIndex]}
+            </div>
+            <div className="w-1/2 py-1 px-2 bg-gray-50 flex">
+              <span className="w-8 text-gray-500 inline-block text-right mr-3">{modifiedIndex + 1}</span>
+              {modifiedLines[modifiedIndex]}
+            </div>
           </div>
         );
         unchanged++;
@@ -67,7 +74,10 @@ export default function DiffChecker() {
               (lcsIndex >= lcs.length || originalLines[originalIndex] !== lcs[lcsIndex])) {
         result.push(
           <div key={`deletion-${i++}`} className="flex">
-            <div className="w-1/2 py-1 px-2 bg-red-50 text-red-900 border-r">{originalLines[originalIndex]}</div>
+            <div className="w-1/2 py-1 px-2 bg-red-900/10 text-red-900 border-r border-red-200 flex shadow-sm">
+              <span className="w-8 text-red-700 inline-block text-right mr-3">{originalIndex + 1}</span>
+              {originalLines[originalIndex]}
+            </div>
             <div className="w-1/2 py-1 px-2"></div>
           </div>
         );
@@ -80,7 +90,10 @@ export default function DiffChecker() {
         result.push(
           <div key={`addition-${i++}`} className="flex">
             <div className="w-1/2 py-1 px-2 border-r"></div>
-            <div className="w-1/2 py-1 px-2 bg-green-50 text-green-900">{modifiedLines[modifiedIndex]}</div>
+            <div className="w-1/2 py-1 px-2 bg-green-900/10 text-green-900 border-green-200 flex shadow-sm">
+              <span className="w-8 text-green-700 inline-block text-right mr-3">{modifiedIndex + 1}</span>
+              {modifiedLines[modifiedIndex]}
+            </div>
           </div>
         );
         additions++;
@@ -89,7 +102,7 @@ export default function DiffChecker() {
     }
 
     setStats({ additions, deletions, unchanged });
-    setDiffResult(<div className="border rounded-lg overflow-auto">{result}</div>);
+    setDiffResult(<div className="overflow-auto font-mono text-sm">{result}</div>);
     setActiveTab("diff");
   };
 
@@ -190,28 +203,44 @@ These lines weren't in the original text.`
 
   return (
     <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader>
+      <Card className="border-none shadow-lg rounded-lg overflow-hidden">
+        <CardHeader className="bg-primary/5 border-b">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-2xl flex items-center">
+            <CardTitle className="text-2xl flex items-center text-primary">
               <GitCompare className="mr-2 h-6 w-6" />
               Diff Checker
             </CardTitle>
             <div className="space-x-2">
-              <Button variant="outline" size="sm" onClick={loadExample}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={loadExample}
+                className="bg-white/80 hover:bg-white shadow-sm"
+              >
                 Load Example
               </Button>
-              <Button variant="outline" size="sm" onClick={clearAll}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearAll}
+                className="bg-white/80 hover:bg-white shadow-sm"
+              >
                 Clear All
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="input">Input</TabsTrigger>
-              <TabsTrigger value="diff" disabled={!diffResult}>
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 p-1 rounded-md">
+              <TabsTrigger value="input" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-md">
+                Input
+              </TabsTrigger>
+              <TabsTrigger 
+                value="diff" 
+                disabled={!diffResult}
+                className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-md"
+              >
                 Diff Result
               </TabsTrigger>
             </TabsList>
@@ -239,9 +268,10 @@ These lines weren't in the original text.`
               <div className="mt-4 flex justify-center">
                 <Button 
                   onClick={calculateDiff}
-                  className="w-full max-w-md"
+                  className="w-full max-w-md bg-primary hover:bg-primary/90 shadow-md"
                   disabled={!originalText && !modifiedText}
                 >
+                  <GitCompare className="mr-2 h-4 w-4" />
                   Compare Texts
                 </Button>
               </div>
@@ -251,13 +281,13 @@ These lines weren't in the original text.`
                 <>
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex space-x-2">
-                      <Badge variant="outline" className="bg-green-50 text-green-900 hover:bg-green-100">
+                      <Badge variant="outline" className="bg-green-900/10 text-green-900 border-green-200 hover:bg-green-900/20 shadow-sm">
                         {stats.additions} Additions
                       </Badge>
-                      <Badge variant="outline" className="bg-red-50 text-red-900 hover:bg-red-100">
+                      <Badge variant="outline" className="bg-red-900/10 text-red-900 border-red-200 hover:bg-red-900/20 shadow-sm">
                         {stats.deletions} Deletions
                       </Badge>
-                      <Badge variant="outline">
+                      <Badge variant="outline" className="bg-gray-100 shadow-sm">
                         {stats.unchanged} Unchanged
                       </Badge>
                     </div>
@@ -265,14 +295,14 @@ These lines weren't in the original text.`
                       variant="outline"
                       size="sm"
                       onClick={copyResults}
-                      className="flex items-center"
+                      className="flex items-center bg-white shadow-sm hover:bg-gray-50"
                       disabled={copied}
                     >
                       {copied ? "Copied!" : "Copy Results"}
                       <Copy className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="max-h-[600px] overflow-auto">
+                  <div className="max-h-[600px] overflow-auto rounded-lg shadow-md border">
                     <div className="flex border-b bg-slate-100 sticky top-0 z-10">
                       <div className="w-1/2 py-2 px-4 font-medium border-r">Original</div>
                       <div className="w-1/2 py-2 px-4 font-medium">Modified</div>
