@@ -29,6 +29,25 @@ import Signup from "./pages/Signup";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 
+// Import PDF Tools pages
+import PdfToolsHome from "./pages/pdf-tools/PdfToolsHome";
+import CompressPdf from "./pages/pdf-tools/CompressPdf";
+import PdfToWord from "./pages/pdf-tools/PdfToWord";
+import PdfToImage from "./pages/pdf-tools/PdfToImage";
+import MergePdf from "./pages/pdf-tools/MergePdf";
+import SplitPdf from "./pages/pdf-tools/SplitPdf";
+import RotatePdf from "./pages/pdf-tools/RotatePdf";
+import ProtectPdf from "./pages/pdf-tools/ProtectPdf";
+import UnlockPdf from "./pages/pdf-tools/UnlockPdf";
+import WatermarkPdf from "./pages/pdf-tools/WatermarkPdf";
+import EditMetadata from "./pages/pdf-tools/EditMetadata";
+import RemovePages from "./pages/pdf-tools/RemovePages";
+import ReorderPdf from "./pages/pdf-tools/ReorderPdf";
+import ExtractText from "./pages/pdf-tools/ExtractText";
+import ExtractImages from "./pages/pdf-tools/ExtractImages";
+import WordToPdf from "./pages/pdf-tools/WordToPdf";
+import YoutubeDownloader from "./pages/YoutubeDownloader";
+
 function Router() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -48,10 +67,30 @@ function Router() {
           <Route path="/transliterate" component={Transliterate} />
           <Route path="/diff-checker" component={DiffChecker} />
           <Route path="/api-tester" component={ApiTester} />
+          <Route path="/youtube-downloader" component={YoutubeDownloader} />
           {/* Premium features - requires authentication */}
           <ProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
           <ProtectedRoute path="/content-gap-analyzer" component={ContentGapAnalyzer} />
           <ProtectedRoute path="/history" component={AnalysisHistory} />
+          {/* PDF Tools routes */}
+          <Route path="/pdf-tools" component={PdfToolsHome} />
+          {/* Using direct component rendering for now */}
+          <Route path="/pdf-tools/compress" component={CompressPdf} />
+          <Route path="/pdf-tools/pdf-to-word" component={PdfToWord} />
+          <Route path="/pdf-tools/pdf-to-image" component={PdfToImage} />
+          <Route path="/pdf-tools/word-to-pdf" component={WordToPdf} />
+          <Route path="/pdf-tools/extract-text" component={ExtractText} />
+          <Route path="/pdf-tools/extract-images" component={ExtractImages} />
+          <Route path="/pdf-tools/merge" component={MergePdf} />
+          <Route path="/pdf-tools/split" component={SplitPdf} />
+          <Route path="/pdf-tools/reorder" component={ReorderPdf} />
+          <Route path="/pdf-tools/rotate" component={RotatePdf} />
+          <Route path="/pdf-tools/protect" component={ProtectPdf} />
+          <Route path="/pdf-tools/unlock" component={UnlockPdf} />
+          <Route path="/pdf-tools/watermark" component={WatermarkPdf} />
+          <Route path="/pdf-tools/metadata" component={EditMetadata} />
+          <Route path="/pdf-tools/remove-pages" component={RemovePages} />
+          {/* Other routes */}
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
           <Route path="/login" component={Login} />

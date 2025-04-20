@@ -22,6 +22,18 @@ import {
   LineChart,
   History,
   Settings,
+  FileText,
+  RotateCw,
+  FileLock,
+  Unlock,
+  FileSignature,
+  FileStack,
+  FilePlus,
+  ScissorsSquare,
+  Stamp,
+  FileOutput,
+  FileInput,
+  Youtube,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -119,6 +131,11 @@ export function Navbar() {
       icon: <Settings className="mr-2 h-4 w-4" />,
     },
     {
+      name: "YouTube Downloader",
+      href: "/youtube-downloader",
+      icon: <Youtube className="mr-2 h-4 w-4" />,
+    },
+    {
       name: "Pre-Launch Audit",
       href: "/pre-launch-audit",
       icon: <CheckSquare className="mr-2 h-4 w-4" />,
@@ -132,12 +149,96 @@ export function Navbar() {
     },
   ];
 
+  const pdfToolsNavigation: NavItem[] = [
+    {
+      name: "Compress PDF",
+      href: "/pdf-tools/compress",
+      icon: <FileText className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "PDF to Word",
+      href: "/pdf-tools/pdf-to-word",
+      icon: <FileOutput className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "PDF to Image",
+      href: "/pdf-tools/pdf-to-image",
+      icon: <FileOutput className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Word to PDF",
+      href: "/pdf-tools/word-to-pdf",
+      icon: <FileInput className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Extract Text",
+      href: "/pdf-tools/extract-text",
+      icon: <FileText className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Extract Images",
+      href: "/pdf-tools/extract-images",
+      icon: <Image className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Merge PDFs",
+      href: "/pdf-tools/merge",
+      icon: <FileStack className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Split PDF",
+      href: "/pdf-tools/split",
+      icon: <ScissorsSquare className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Reorder Pages",
+      href: "/pdf-tools/reorder",
+      icon: <FilePlus className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Rotate PDF",
+      href: "/pdf-tools/rotate",
+      icon: <RotateCw className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Protect PDF",
+      href: "/pdf-tools/protect",
+      icon: <FileLock className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Unlock PDF",
+      href: "/pdf-tools/unlock",
+      icon: <Unlock className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Add Watermark",
+      href: "/pdf-tools/watermark",
+      icon: <Stamp className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Edit Metadata",
+      href: "/pdf-tools/metadata",
+      icon: <FileSignature className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Remove Pages",
+      href: "/pdf-tools/remove-pages",
+      icon: <ScissorsSquare className="mr-2 h-4 w-4" />,
+    },
+  ];
+
   // Combined navigation for mobile view
-  const allNavigation: NavItem[] = [...mainNavigation, ...toolsNavigation];
+  const allNavigation: NavItem[] = [
+    ...mainNavigation, 
+    ...toolsNavigation,
+    ...pdfToolsNavigation
+  ];
 
   const isActive = (path: string) => location === path;
   const isToolActive = () =>
     toolsNavigation.some((item) => location === item.href);
+  const isPdfToolActive = () =>
+    pdfToolsNavigation.some((item) => location === item.href);
 
   return (
     <nav className="bg-background border-b sticky top-0 z-50">
@@ -206,6 +307,42 @@ export function Navbar() {
                             Premium
                           </span>
                         )}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* PDF Tools Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "px-3 py-2 rounded-md text-sm font-medium flex items-center",
+                      isPdfToolActive()
+                        ? "bg-primary/10 text-primary"
+                        : "text-foreground hover:bg-accent hover:text-accent-foreground",
+                      "transition-colors duration-200",
+                    )}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    PDF Tools
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
+                  {pdfToolsNavigation.map((item) => (
+                    <DropdownMenuItem key={item.name} asChild>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex w-full items-center px-2 py-2 rounded-md text-sm",
+                          isActive(item.href) && "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {item.icon}
+                        {item.name}
                       </Link>
                     </DropdownMenuItem>
                   ))}

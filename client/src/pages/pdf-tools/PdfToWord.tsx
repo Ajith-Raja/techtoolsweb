@@ -1,0 +1,162 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { FileText, Download, Settings2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { PdfFileUpload } from '@/components/PdfFileUpload';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+
+export default function PdfToWord() {
+  const [file, setFile] = useState<File | null>(null);
+  const [outputFormat, setOutputFormat] = useState<string>('docx');
+  const [preserveFormatting, setPreserveFormatting] = useState<boolean>(true);
+  const [processing, setProcessing] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
+  const [completed, setCompleted] = useState<boolean>(false);
+  const { toast } = useToast();
+
+  const handleFileSelect = (selectedFile: File) => {
+    setFile(selectedFile);
+    setProgress(0);
+    setCompleted(false);
+  };
+
+  const resetForm = () => {
+    setFile(null);
+    setProgress(0);
+    setCompleted(false);
+  };
+
+  const handleConversion = () => {
+    if (!file) return;
+    
+    setProcessing(true);
+    
+    // Simulate conversion progress
+    let progressVal = 0;
+    const interval = setInterval(() => {
+      progressVal += 5;
+      setProgress(progressVal);
+      
+      if (progressVal >= 100) {
+        clearInterval(interval);
+        setProcessing(false);
+        setCompleted(true);
+        toast({
+          title: 'Conversion Completed',
+          description: 'Your Word document is ready to download.',
+        });
+      }
+    }, 300);
+  };
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="max-w-3xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl flex items-center">
+              <FileText className="h-6 w-6 mr-2 text-primary" />
+              PDF to Word Converter
+            </CardTitle>
+            <CardDescription>
+              Convert your PDF documents to editable Word documents
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <PdfFileUpload 
+              onFileSelect={handleFileSelect}
+              currentFile={file}
+              onFileRemove={resetForm}
+              disabled={processing}
+            />
+            
+            {file && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="output-format">Output Format</Label>
+                    <Select 
+                      value={outputFormat}
+                      onValueChange={setOutputFormat}
+                      disabled={processing || completed}
+                    >
+                      <SelectTrigger id="output-format">
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="docx">Word (DOCX)</SelectItem>
+                        <SelectItem value="doc">Word 97-2003 (DOC)</SelectItem>
+                        <SelectItem value="rtf">Rich Text Format (RTF)</SelectItem>
+                        <SelectItem value="txt">Plain Text (TXT)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="preserve-formatting"
+                      checked={preserveFormatting}
+                      onCheckedChange={setPreserveFormatting}
+                      disabled={processing || completed}
+                    />
+                    <Label htmlFor="preserve-formatting" className="cursor-pointer">
+                      Preserve original formatting
+                    </Label>
+                  </div>
+                </div>
+                
+                {(processing || completed) && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Progress</span>
+                      <span>{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+          
+          <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-end">
+            {file && !completed && (
+              <Button
+                variant="default"
+                className="w-full sm:w-auto"
+                onClick={handleConversion}
+                disabled={processing}
+              >
+                {processing ? (
+                  <>
+                    <Settings2 className="mr-2 h-4 w-4 animate-spin" />
+                    Converting...
+                  </>
+                ) : (
+                  <>
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    Convert to {outputFormat.toUpperCase()}
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {completed && (
+              <Button
+                variant="default"
+                className="w-full sm:w-auto"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Word Document
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+}
