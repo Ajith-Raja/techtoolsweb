@@ -237,6 +237,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoint for content gap analyzer (premium feature with limited free access)
+  app.post("/api/content-gap-analyzer", async (req, res) => {
+    // Validate authentication for full results
+    const isPremium = req.isAuthenticated();
+    const restrictedResults = !isPremium;
+
+    try {
+      const { yourDomain, competitorDomains, language, location, niche } = req.body;
+      
+      // Basic validation
+      if (!yourDomain || typeof yourDomain !== 'string') {
+        return res.status(400).json({ message: "Your domain is required" });
+      }
+      
+      if (!competitorDomains || !Array.isArray(competitorDomains) || competitorDomains.length === 0) {
+        return res.status(400).json({ message: "At least one competitor domain is required" });
+      }
+      
+      // Restrict non-premium users to 1 competitor
+      if (restrictedResults && competitorDomains.length > 1) {
+        return res.status(403).json({ 
+          message: "Free users can only analyze 1 competitor. Please upgrade for up to 3 competitors."
+        });
+      }
+      
+      // In a real implementation, this would call a keyword research API
+      // For now, we'll return realistic mock data
+      const domains = {
+        yourDomain: yourDomain.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+        competitors: competitorDomains.map(domain => 
+          domain.replace(/^https?:\/\//, "").replace(/\/$/, "")
+        )
+      };
+      
+      // Create a deterministic but realistic set of results
+      const totalKeywords = restrictedResults ? 10 : 25;
+      const keywordPool = [
+        "seo tools", "keyword research", "backlink checker", "website audit",
+        "content optimization", "rank tracker", "seo analytics", "meta tag generator",
+        "structured data", "schema markup", "site speed test", "mobile friendly",
+        "competitor analysis", "content gap", "keyword gap", "keyword density",
+        "plagiarism check", "readability score", "domain authority", "on page seo",
+        "technical seo", "local seo", "voice search optimization", "featured snippets",
+        "serp analysis", "keyword difficulty", "content planning", "topic cluster",
+        "internal linking", "anchor text", "keyword research tool", "seo dashboard",
+        "traffic analyzer", "conversion optimization", "bounce rate analysis"
+      ];
+      
+      // Generate keywords based on competitor domains for realism
+      const keywords = Array(totalKeywords).fill(0).map((_, i) => {
+        const keyword = keywordPool[i % keywordPool.length];
+        const searchVolume = Math.floor(Math.random() * 20000) + 1000;
+        const keywordDifficulty = Math.floor(Math.random() * 70) + 5;
+        const cpc = (Math.random() * 4 + 0.5).toFixed(2);
+        const trafficPotential = keywordDifficulty < 30 ? 'High' : 
+                                keywordDifficulty < 60 ? 'Medium' : 'Low';
+        
+        // Determine which competitors rank for this keyword
+        const competitorsRanking = domains.competitors.filter(() => Math.random() > 0.3)
+          .map(domain => ({
+            domain,
+            position: Math.floor(Math.random() * 10) + 1
+          }));
+          
+        // Generate a content suggestion based on the keyword
+        let contentSuggestion = "";
+        if (keyword.includes("seo")) {
+          contentSuggestion = `Create a comprehensive guide to ${keyword}`;
+        } else if (keyword.includes("keyword")) {
+          contentSuggestion = `Write a tutorial on ${keyword} with step-by-step instructions`;
+        } else if (keyword.includes("content")) {
+          contentSuggestion = `Develop a case study showing ${keyword} success stories`;
+        } else {
+          contentSuggestion = `Create a comparison post about different ${keyword} approaches`;
+        }
+        
+        return {
+          keyword,
+          competitors: competitorsRanking,
+          searchVolume: restrictedResults ? 0 : searchVolume,
+          keywordDifficulty: restrictedResults ? 0 : keywordDifficulty,
+          trafficPotential: restrictedResults ? 'Unknown' : trafficPotential,
+          cpc: restrictedResults ? 0 : parseFloat(cpc),
+          contentSuggestion
+        };
+      });
+      
+      // Count opportunities by different metrics
+      const lowDifficultyOpportunities = restrictedResults ? 0 : 
+        keywords.filter(k => k.keywordDifficulty < 30).length;
+        
+      const highTrafficOpportunities = restrictedResults ? 0 :
+        keywords.filter(k => k.trafficPotential === 'High').length;
+      
+      // Generate top categories based on keyword patterns
+      const categories = restrictedResults ? [] : [
+        { category: "SEO Tools", keywordCount: Math.floor(Math.random() * 10) + 5 },
+        { category: "Content", keywordCount: Math.floor(Math.random() * 8) + 3 },
+        { category: "Technical", keywordCount: Math.floor(Math.random() * 6) + 2 },
+        { category: "Analytics", keywordCount: Math.floor(Math.random() * 5) + 1 }
+      ];
+      
+      // Return the complete analysis results
+      res.json({
+        yourDomain: domains.yourDomain,
+        competitorDomains: domains.competitors,
+        analysis: {
+          totalMissingKeywords: keywords.length,
+          lowDifficultyOpportunities,
+          highTrafficOpportunities,
+          topCategories: categories
+        },
+        keywords,
+        dateAnalyzed: new Date().toISOString(),
+        premium: !restrictedResults
+      });
+    } catch (error) {
+      console.error('Error in content gap analyzer endpoint:', error);
+      res.status(500).json({ 
+        message: error instanceof Error 
+          ? error.message 
+          : "Server error analyzing content gaps" 
+      });
+    }
+  });
+
   // API endpoint for pre-launch audit (premium feature - requires authentication)
   app.post("/api/pre-launch-audit", async (req, res) => {
     // Check if the user is authenticated

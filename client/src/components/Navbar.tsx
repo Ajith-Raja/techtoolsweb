@@ -19,6 +19,9 @@ import {
   LogOut,
   Loader2,
   GitCompare,
+  LineChart,
+  History,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -111,9 +114,20 @@ export function Navbar() {
       icon: <Languages className="mr-2 h-4 w-4" />,
     },
     {
+      name: "API Tester",
+      href: "/api-tester",
+      icon: <Settings className="mr-2 h-4 w-4" />,
+    },
+    {
       name: "Pre-Launch Audit",
       href: "/pre-launch-audit",
       icon: <CheckSquare className="mr-2 h-4 w-4" />,
+      premium: true,
+    },
+    {
+      name: "Content Gap Analyzer",
+      href: "/content-gap-analyzer",
+      icon: <LineChart className="mr-2 h-4 w-4" />,
       premium: true,
     },
   ];
@@ -216,6 +230,12 @@ export function Navbar() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href="/history" className="cursor-pointer">
+                          <History className="mr-2 h-4 w-4" />
+                          Analysis History
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => logoutMutation.mutate()}
                         disabled={logoutMutation.isPending}
@@ -308,6 +328,13 @@ export function Navbar() {
                             <User className="mr-2 h-4 w-4" />
                             <span>{user.displayName || user.username}</span>
                           </div>
+                          <Link 
+                            href="/history" 
+                            className="flex items-center px-3 py-3 rounded-md text-base font-medium hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+                          >
+                            <History className="mr-2 h-4 w-4" />
+                            Analysis History
+                          </Link>
                           <Button
                             onClick={() => logoutMutation.mutate()}
                             disabled={logoutMutation.isPending}

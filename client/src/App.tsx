@@ -17,9 +17,12 @@ import FontGenerator from "./pages/FontGenerator";
 import ImageCompressor from "./pages/ImageCompressor";
 import Transliterate from "./pages/Transliterate";
 import DiffChecker from "./pages/DiffChecker";
+import ApiTester from "./pages/ApiTester";
 import About from "./pages/About";
 import Features from "./pages/Features";
 import PreLaunchAudit from "./pages/PreLaunchAudit";
+import ContentGapAnalyzer from "./pages/ContentGapAnalyzer";
+import AnalysisHistory from "./pages/AnalysisHistory";
 import AuthPage from "./pages/auth-page";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -44,12 +47,16 @@ function Router() {
           <Route path="/image-compressor" component={ImageCompressor} />
           <Route path="/transliterate" component={Transliterate} />
           <Route path="/diff-checker" component={DiffChecker} />
-          {/* Premium feature - requires authentication */}
+          <Route path="/api-tester" component={ApiTester} />
+          {/* Premium features - requires authentication */}
           <ProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
+          <ProtectedRoute path="/content-gap-analyzer" component={ContentGapAnalyzer} />
+          <ProtectedRoute path="/history" component={AnalysisHistory} />
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
           <Route path="/login" component={Login} />
           <Route path="/signup" component={Signup} />
+          <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>
       </main>

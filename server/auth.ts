@@ -186,4 +186,131 @@ export function setupAuth(app: Express): void {
     const { password, ...userWithoutPassword } = req.user as User;
     res.json(userWithoutPassword);
   });
+  
+  // Get user analysis history
+  app.get("/api/user/analysis-history", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const userId = req.user.id;
+      const history = await storage.getUserAnalysisHistory(userId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching analysis history:", error);
+      res.status(500).json({ 
+        message: error instanceof Error 
+          ? error.message 
+          : "Error fetching analysis history" 
+      });
+    }
+  });
+  
+  // Get specific analysis by ID
+  app.get("/api/analysis/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const analysisId = parseInt(req.params.id, 10);
+      const analysis = await storage.getAnalysisById(analysisId);
+      
+      if (!analysis) {
+        return res.status(404).json({ message: "Analysis not found" });
+      }
+      
+      // Make sure the user owns this analysis
+      if (analysis.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching analysis:", error);
+      res.status(500).json({ 
+        message: error instanceof Error 
+          ? error.message 
+          : "Error fetching analysis" 
+      });
+    }
+  });
+  
+  // Update analysis (notes, favorite status)
+  app.patch("/api/analysis/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const analysisId = parseInt(req.params.id, 10);
+      const analysis = await storage.getAnalysisById(analysisId);
+      
+      if (!analysis) {
+        return res.status(404).json({ message: "Analysis not found" });
+      }
+      
+      // Make sure the user owns this analysis
+      if (analysis.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Only allow updating certain fields
+      const allowedUpdates = ["notes", "favorite"];
+      const updates: Record<string, any> = {};
+      
+      for (const key of allowedUpdates) {
+        if (key in req.body) {
+          updates[key] = req.body[key];
+        }
+      }
+      
+      const updatedAnalysis = await storage.updateAnalysis(analysisId, updates);
+      res.json(updatedAnalysis);
+    } catch (error) {
+      console.error("Error updating analysis:", error);
+      res.status(500).json({ 
+        message: error instanceof Error 
+          ? error.message 
+          : "Error updating analysis" 
+      });
+    }
+  });
+  
+  // Delete analysis
+  app.delete("/api/analysis/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const analysisId = parseInt(req.params.id, 10);
+      const analysis = await storage.getAnalysisById(analysisId);
+      
+      if (!analysis) {
+        return res.status(404).json({ message: "Analysis not found" });
+      }
+      
+      // Make sure the user owns this analysis
+      if (analysis.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const deleted = await storage.deleteAnalysis(analysisId);
+      
+      if (deleted) {
+        res.json({ message: "Analysis deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete analysis" });
+      }
+    } catch (error) {
+      console.error("Error deleting analysis:", error);
+      res.status(500).json({ 
+        message: error instanceof Error 
+          ? error.message 
+          : "Error deleting analysis" 
+      });
+    }
+  });
 }
