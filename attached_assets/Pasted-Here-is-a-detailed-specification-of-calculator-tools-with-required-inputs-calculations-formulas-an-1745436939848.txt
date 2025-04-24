@@ -1,0 +1,136 @@
+Here is a detailed specification of calculator tools with required inputs, calculations/formulas, and expected outputs:
+
+---
+
+**1. Percentage Calculator**
+- Inputs: `original_price`, `discount_percent`, `tip_percent`, `percent_increase`, `percent_decrease`
+- Calculations:
+  - Discount = `original_price * discount_percent / 100`
+  - Final Price = `original_price - discount`
+  - Tip = `bill_amount * tip_percent / 100`
+  - Increase = `value * (1 + percent_increase / 100)`
+  - Decrease = `value * (1 - percent_decrease / 100)`
+- Outputs: `discount`, `final_price`, `tip`, `increased_value`, `decreased_value`
+
+**2. EMI Calculator**
+- Inputs: `loan_amount`, `annual_interest_rate`, `loan_tenure_months`
+- Calculation:
+  - Monthly Interest Rate (R) = `annual_rate / 12 / 100`
+  - EMI = `[P * R * (1 + R)^N] / [(1 + R)^N - 1]`
+- Output: `emi`
+
+**3. GST Calculator**
+- Inputs: `original_amount`, `gst_rate`
+- Calculations:
+  - GST = `original_amount * gst_rate / 100`
+  - Final = `original_amount + gst`
+- Outputs: `gst_amount`, `final_price`
+
+**4. Currency Converter**
+- Inputs: `amount`, `conversion_rate`
+- Calculation: `amount * conversion_rate`
+- Output: `converted_amount`
+
+**5. Unit Converter**
+- Inputs: `value`, `from_unit`, `to_unit`
+- Calculation: Use conversion ratio between units
+- Output: `converted_value`
+
+**6. SIP Calculator**
+- Inputs: `monthly_investment`, `annual_rate`, `duration_years`
+- Calculation:
+  - Monthly Rate = `rate / 12 / 100`
+  - Maturity Value = `P × [(1 + r)^n – 1] / r × (1 + r)`
+- Output: `maturity_value`
+
+**7. Retirement Planning Calculator**
+- Inputs: `present_savings`, `monthly_contrib`, `annual_return_rate`, `years_to_retirement`
+- Calculation: Compound interest on savings + annuity formula for contributions
+- Output: `future_value`
+
+**8. Lumpsum Investment Calculator**
+- Inputs: `principal`, `annual_rate`, `duration_years`
+- Calculation: `Future Value = P * (1 + r)^n`
+- Output: `future_value`
+
+**9. Income Tax Calculator**
+- Inputs: `annual_income`, `deductions`, `age`
+- Calculation: Based on region-specific tax slabs
+- Outputs: `total_tax`, `net_income`
+
+**10. Paycheck Calculator**
+- Inputs: `gross_salary`, `tax_percent`, `other_deductions`
+- Output: `net_salary = gross - tax - deductions`
+
+**11. Property Tax Calculator**
+- Inputs: `property_value`, `tax_rate`
+- Calculation: `tax = value * rate / 100`
+- Output: `property_tax`
+
+**12. Construction Cost Calculator**
+- Inputs: `area`, `cost_per_sqft`
+- Output: `total_cost`
+
+**13. Calorie Needs Calculator**
+- Inputs: `age`, `gender`, `weight_kg`, `height_cm`, `activity_level`
+- Calculation: BMR (e.g., Mifflin-St Jeor Formula) × activity multiplier
+- Output: `daily_calorie_needs`
+
+**14. Ideal Weight Calculator**
+- Inputs: `height_cm`, `gender`
+- Calculation: Devine Formula or other standard
+- Output: `ideal_weight`
+
+**15. Macronutrient Calculator**
+- Inputs: `total_calories`, `protein_pct`, `carb_pct`, `fat_pct`
+- Output: grams of each macro
+
+**16. Pregnancy Due Date Calculator**
+- Input: `LMP date`
+- Output: `Due Date = LMP + 280 days`
+
+**17. Subnet Calculator**
+- Inputs: `ip_address`, `cidr`
+- Outputs: `subnet_mask`, `network_address`, `host_range`, `broadcast_address`
+
+**18. Unix Timestamp Converter**
+- Input: `timestamp` or `date_string`
+- Output: `converted_time` or `converted_date`
+
+**19. Password Entropy Calculator**
+- Inputs: `length`, `character_set`
+- Calculation: `entropy = length * log2(character_set_size)`
+- Output: `entropy_bits`
+
+**20. Hash Generator**
+- Inputs: `input_text`, `hash_type`
+- Output: Hashed value (MD5, SHA256, etc.)
+
+**21. Regex Tester**
+- Inputs: `regex`, `test_string`
+- Output: `match_result`, `explanation`
+
+**22. Base Converter**
+- Inputs: `number`, `from_base`, `to_base`
+- Output: `converted_number`
+
+**23. GPA Calculator**
+- Inputs: list of tuples: `(grade_point, credit_hours)`
+- Output: `GPA = sum(grade_point × credit_hours) / sum(credit_hours)`
+
+**24. Grade Percentage Calculator**
+- Inputs: `total_scored`, `total_marks`
+- Output: `percentage = (total_scored / total_marks) * 100`
+
+**25. Profit Margin Calculator**
+- Inputs: `revenue`, `cost`
+- Outputs:
+  - Profit = `revenue - cost`
+  - Margin = `(profit / revenue) * 100`
+
+**26. E-commerce Fees Calculator**
+- Inputs: `sale_price`, `platform_fee_pct`, `fixed_fee`, `cost`
+- Outputs:
+  - Fees = `(sale_price * fee_pct / 100) + fixed_fee`
+  - Profit = `sale_price - fees - cost`
+

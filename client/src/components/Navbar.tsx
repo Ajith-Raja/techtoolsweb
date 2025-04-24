@@ -2,6 +2,7 @@ import {
   Menu,
   Search,
   BarChart,
+  BarChart3,
   BookOpen,
   FileQuestion,
   Activity,
@@ -34,6 +35,11 @@ import {
   FileOutput,
   FileInput,
   Youtube,
+  Calculator,
+  DollarSign,
+  ArrowLeftRight,
+  Receipt,
+  PiggyBank,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,11 +73,6 @@ export function Navbar() {
 
   const mainNavigation: NavItem[] = [
     { name: "Home", href: "/", icon: <HomeIcon className="mr-2 h-4 w-4" /> },
-    {
-      name: "About",
-      href: "/about",
-      icon: <BookOpen className="mr-2 h-4 w-4" />,
-    },
     {
       name: "Diff Checker",
       href: "/diff-checker",
@@ -121,16 +122,6 @@ export function Navbar() {
       icon: <Image className="mr-2 h-4 w-4" />,
     },
     {
-      name: "Transliterate",
-      href: "/transliterate",
-      icon: <Languages className="mr-2 h-4 w-4" />,
-    },
-    {
-      name: "API Tester",
-      href: "/api-tester",
-      icon: <Settings className="mr-2 h-4 w-4" />,
-    },
-    {
       name: "YouTube Downloader",
       href: "/youtube-downloader",
       icon: <Youtube className="mr-2 h-4 w-4" />,
@@ -146,6 +137,63 @@ export function Navbar() {
       href: "/content-gap-analyzer",
       icon: <LineChart className="mr-2 h-4 w-4" />,
       premium: true,
+    },
+  ];
+  
+  const calculatorsNavigation: NavItem[] = [
+    {
+      name: "Percentage Calculator",
+      href: "/calculators/percentage",
+      icon: <Percent className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "EMI Calculator",
+      href: "/calculators/emi",
+      icon: <DollarSign className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "GST Calculator",
+      href: "/calculators/gst",
+      icon: <Calculator className="mr-2 h-4 w-4" />,
+    },
+
+    {
+      name: "Unit Converter",
+      href: "/calculators/unit-converter",
+      icon: <ArrowLeftRight className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "SIP Calculator",
+      href: "/calculators/sip",
+      icon: <TrendingUp className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Retirement Calculator",
+      href: "/calculators/retirement",
+      icon: <PiggyBank className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Investment Calculator",
+      href: "/calculators/investment",
+      icon: <BarChart3 className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Income Tax Calculator",
+      href: "/calculators/income-tax",
+      icon: <Receipt className="mr-2 h-4 w-4" />,
+    },
+  ];
+  
+  const otherToolsNavigation: NavItem[] = [
+    {
+      name: "Transliterate",
+      href: "/transliterate",
+      icon: <Languages className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "API Tester",
+      href: "/api-tester",
+      icon: <Settings className="mr-2 h-4 w-4" />,
     },
   ];
 
@@ -231,6 +279,8 @@ export function Navbar() {
   const allNavigation: NavItem[] = [
     ...mainNavigation, 
     ...toolsNavigation,
+    ...calculatorsNavigation,
+    ...otherToolsNavigation,
     ...pdfToolsNavigation
   ];
 
@@ -239,6 +289,10 @@ export function Navbar() {
     toolsNavigation.some((item) => location === item.href);
   const isPdfToolActive = () =>
     pdfToolsNavigation.some((item) => location === item.href);
+  const isCalculatorActive = () =>
+    calculatorsNavigation.some((item) => location === item.href);
+  const isOtherToolActive = () =>
+    otherToolsNavigation.some((item) => location === item.href);
 
   return (
     <nav className="bg-background border-b sticky top-0 z-50">
@@ -313,6 +367,42 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Calculators Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "px-3 py-2 rounded-md text-sm font-medium flex items-center",
+                      isCalculatorActive()
+                        ? "bg-primary/10 text-primary"
+                        : "text-foreground hover:bg-accent hover:text-accent-foreground",
+                      "transition-colors duration-200",
+                    )}
+                  >
+                    <Calculator className="mr-2 h-4 w-4" />
+                    Calculators
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
+                  {calculatorsNavigation.map((item) => (
+                    <DropdownMenuItem key={item.name} asChild>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex w-full items-center px-2 py-2 rounded-md text-sm",
+                          isActive(item.href) && "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {item.icon}
+                        {item.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               {/* PDF Tools Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -333,6 +423,42 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
                   {pdfToolsNavigation.map((item) => (
+                    <DropdownMenuItem key={item.name} asChild>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex w-full items-center px-2 py-2 rounded-md text-sm",
+                          isActive(item.href) && "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {item.icon}
+                        {item.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Other Tools Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "px-3 py-2 rounded-md text-sm font-medium flex items-center",
+                      isOtherToolActive()
+                        ? "bg-primary/10 text-primary"
+                        : "text-foreground hover:bg-accent hover:text-accent-foreground",
+                      "transition-colors duration-200",
+                    )}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Other Tools
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {otherToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <Link
                         href={item.href}

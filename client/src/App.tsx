@@ -48,6 +48,17 @@ import ExtractImages from "./pages/pdf-tools/ExtractImages";
 import WordToPdf from "./pages/pdf-tools/WordToPdf";
 import YoutubeDownloader from "./pages/YoutubeDownloader";
 
+// Import Calculator pages
+import CalculatorsHome from "./pages/calculators/CalculatorsHome";
+import PercentageCalculator from "./pages/calculators/PercentageCalculator";
+import EMICalculator from "./pages/calculators/EMICalculator";
+import GSTCalculator from "./pages/calculators/GSTCalculator";
+import UnitConverter from "./pages/calculators/UnitConverter";
+import SIPCalculator from "./pages/calculators/SIPCalculator";
+import RetirementCalculator from "./pages/calculators/RetirementCalculator";
+import InvestmentCalculator from "./pages/calculators/InvestmentCalculator";
+import IncomeTaxCalculator from "./pages/calculators/IncomeTaxCalculator";
+
 function Router() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -90,6 +101,17 @@ function Router() {
           <Route path="/pdf-tools/watermark" component={WatermarkPdf} />
           <Route path="/pdf-tools/metadata" component={EditMetadata} />
           <Route path="/pdf-tools/remove-pages" component={RemovePages} />
+          
+          {/* Calculator routes */}
+          <Route path="/calculators" component={CalculatorsHome} />
+          <Route path="/calculators/percentage" component={PercentageCalculator} />
+          <Route path="/calculators/emi" component={EMICalculator} />
+          <Route path="/calculators/gst" component={GSTCalculator} />
+          <Route path="/calculators/unit-converter" component={UnitConverter} />
+          <Route path="/calculators/sip" component={SIPCalculator} />
+          <Route path="/calculators/retirement" component={RetirementCalculator} />
+          <Route path="/calculators/investment" component={InvestmentCalculator} />
+          <Route path="/calculators/income-tax" component={IncomeTaxCalculator} />
           {/* Other routes */}
           <Route path="/about" component={About} />
           <Route path="/features" component={Features} />
