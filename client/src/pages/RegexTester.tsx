@@ -16,6 +16,11 @@ import { useToast } from "@/hooks/use-toast";
 
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css';
+// Add core components before language imports
+import 'prismjs/components/prism-core';
+import 'prismjs/components/prism-markup';
+import 'prismjs/components/prism-clike';
+// Language-specific imports
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-java';
@@ -233,7 +238,12 @@ const RegexTester: React.FC = () => {
 
   // Effect for highlighting code with Prism
   useEffect(() => {
-    Prism.highlightAll();
+    // Ensure Prism is fully loaded before highlighting
+    if (Prism && Prism.highlight && codeSnippet) {
+      setTimeout(() => {
+        Prism.highlightAll();
+      }, 0);
+    }
   }, [codeSnippet, colorTheme]);
 
   // Effect for regex testing
