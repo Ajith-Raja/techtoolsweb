@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["freetype", "gumbo", "harfbuzz", "jbig2dec", "lcms2", "libimagequant", "libjpeg", "libjpeg_turbo", "libtiff", "libwebp", "libxcrypt", "mupdf", "openjpeg", "swig", "tcl", "tk", "xcbuild", "zlib", "libpng", "libxslt", "libxml2"]
+packages = ["freetype", "gumbo", "harfbuzz", "jbig2dec", "lcms2", "libimagequant", "libjpeg", "libjpeg_turbo", "libpng", "libtiff", "libwebp", "libxcrypt", "libxml2", "libxslt", "mupdf", "openjpeg", "swig", "tcl", "tk", "xcbuild", "zlib"]
 
 [deployment]
 deploymentTarget = "cloudrun"
@@ -21,6 +21,10 @@ externalPort = 3000
 [[ports]]
 localPort = 8000
 externalPort = 8000
+
+[[ports]]
+localPort = 8001
+externalPort = 3001
 
 [workflows]
 
