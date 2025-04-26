@@ -4,13 +4,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Copy, GitCompare } from "lucide-react";
+import { Copy, GitCompare, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+interface DiffLine {
+  type: 'unchanged' | 'addition' | 'deletion';
+  originalIndex: number;
+  modifiedIndex: number;
+  originalContent: string;
+  modifiedContent: string;
+}
 
 export default function DiffChecker() {
   const [originalText, setOriginalText] = useState<string>("");
   const [modifiedText, setModifiedText] = useState<string>("");
   const [diffResult, setDiffResult] = useState<React.ReactNode>(null);
+  const [diffData, setDiffData] = useState<DiffLine[]>([]);
+  const [mergedText, setMergedText] = useState<string>("");
   const [stats, setStats] = useState<{
     additions: number;
     deletions: number;
@@ -34,9 +45,9 @@ export default function DiffChecker() {
     let deletions = 0;
     let unchanged = 0;
     
+    const diffLines: DiffLine[] = [];
     const result: React.ReactNode[] = [];
     let i = 0;
-    let j = 0;
 
     // Find longest common subsequence of lines
     const lcs = longestCommonSubsequence(originalLines, modifiedLines);
@@ -52,6 +63,15 @@ export default function DiffChecker() {
           modifiedIndex < modifiedLines.length && 
           originalLines[originalIndex] === lcs[lcsIndex] &&
           modifiedLines[modifiedIndex] === lcs[lcsIndex]) {
+        
+        diffLines.push({
+          type: 'unchanged',
+          originalIndex,
+          modifiedIndex,
+          originalContent: originalLines[originalIndex],
+          modifiedContent: modifiedLines[modifiedIndex]
+        });
+        
         result.push(
           <div key={`unchanged-${i++}`} className="flex">
             <div className="w-1/2 py-1 px-2 bg-gray-50 border-r flex">
@@ -72,6 +92,15 @@ export default function DiffChecker() {
       // Line was deleted from original
       else if (originalIndex < originalLines.length && 
               (lcsIndex >= lcs.length || originalLines[originalIndex] !== lcs[lcsIndex])) {
+        
+        diffLines.push({
+          type: 'deletion',
+          originalIndex,
+          modifiedIndex: -1,
+          originalContent: originalLines[originalIndex],
+          modifiedContent: ''
+        });
+        
         result.push(
           <div key={`deletion-${i++}`} className="flex">
             <div className="w-1/2 py-1 px-2 bg-red-900/10 text-red-900 border-r border-red-200 flex shadow-sm">
@@ -87,6 +116,15 @@ export default function DiffChecker() {
       // Line was added in modified
       else if (modifiedIndex < modifiedLines.length && 
               (lcsIndex >= lcs.length || modifiedLines[modifiedIndex] !== lcs[lcsIndex])) {
+        
+        diffLines.push({
+          type: 'addition',
+          originalIndex: -1,
+          modifiedIndex,
+          originalContent: '',
+          modifiedContent: modifiedLines[modifiedIndex]
+        });
+        
         result.push(
           <div key={`addition-${i++}`} className="flex">
             <div className="w-1/2 py-1 px-2 border-r"></div>
@@ -102,8 +140,83 @@ export default function DiffChecker() {
     }
 
     setStats({ additions, deletions, unchanged });
+    setDiffData(diffLines);
     setDiffResult(<div className="overflow-auto font-mono text-sm">{result}</div>);
+    
+    // Initialize merged text with original text
+    const initializeMergedText = () => {
+      setMergedText(originalText);
+    };
+    
+    initializeMergedText();
     setActiveTab("diff");
+  };
+  
+  // Function to apply a line from either the left or right side
+  const applyChange = (lineIndex: number, side: 'left' | 'right') => {
+    const line = diffData[lineIndex];
+    
+    // If the line is unchanged, do nothing
+    if (line.type === 'unchanged') return;
+    
+    // Create arrays of lines for easier manipulation
+    const mergedLines = mergedText.split('\n');
+    const originalLines = originalText.split('\n');
+    const modifiedLines = modifiedText.split('\n');
+    
+    // Get all lines before the current diffLine in the merged text
+    const prevLines: DiffLine[] = diffData.slice(0, lineIndex).filter(
+      l => l.type === 'unchanged' || 
+           (l.type === 'deletion' && side === 'left') || 
+           (l.type === 'addition' && side === 'right')
+    );
+    
+    let lastIndex = -1;
+    if (prevLines.length > 0) {
+      const lastLine = prevLines[prevLines.length - 1];
+      lastIndex = side === 'left' ? lastLine.originalIndex : lastLine.modifiedIndex;
+    }
+    
+    // Determine the correct insertion index in the merged text
+    let insertIndex = lastIndex + 1;
+    if (insertIndex >= mergedLines.length) {
+      insertIndex = mergedLines.length;
+    }
+    
+    // Get the content to insert based on the requested side
+    const contentToInsert = side === 'left' ? line.originalContent : line.modifiedContent;
+    
+    // Handle different types of changes
+    if (line.type === 'deletion' && side === 'left') {
+      // Keep line from left (original) side
+      // It's already in the merged text, so no action needed
+      toast({
+        title: "Change Applied",
+        description: "Kept original line"
+      });
+    } else if (line.type === 'addition' && side === 'right') {
+      // Add line from right (modified) side to merged text
+      mergedLines.splice(insertIndex, 0, contentToInsert);
+      setMergedText(mergedLines.join('\n'));
+      toast({
+        title: "Change Applied",
+        description: "Added new line from modified text"
+      });
+    } else if (line.type === 'deletion' && side === 'right') {
+      // Remove line from merged text
+      mergedLines.splice(insertIndex, 1);
+      setMergedText(mergedLines.join('\n'));
+      toast({
+        title: "Change Applied",
+        description: "Removed line from original text"
+      });
+    } else if (line.type === 'addition' && side === 'left') {
+      // Ignore the added line from the right side
+      toast({
+        title: "Change Ignored",
+        description: "Ignored new line from modified text"
+      });
+    }
   };
 
   // Longest common subsequence algorithm to find common lines
@@ -172,11 +285,13 @@ export default function DiffChecker() {
     }
   };
 
-  // Clear both textareas
+  // Clear all data
   const clearAll = () => {
     setOriginalText("");
     setModifiedText("");
     setDiffResult(null);
+    setDiffData([]);
+    setMergedText("");
     setStats({ additions: 0, deletions: 0, unchanged: 0 });
     setActiveTab("input");
   };
@@ -199,6 +314,105 @@ Others will be left unchanged.
 And we have added some brand new lines.
 These lines weren't in the original text.`
     );
+  };
+
+  // Function to copy merged text to clipboard
+  const copyMergedText = async () => {
+    try {
+      await navigator.clipboard.writeText(mergedText);
+      toast({
+        title: "Copied!",
+        description: "Merged text copied to clipboard"
+      });
+    } catch (err) {
+      console.error("Failed to copy merged text: ", err);
+    }
+  };
+  
+  // Render the diff with merge buttons
+  const renderDiffWithMergeOptions = () => {
+    if (!diffData.length) return null;
+    
+    return diffData.map((line, index) => {
+      if (line.type === 'unchanged') {
+        return (
+          <div key={`unchanged-${index}`} className="flex">
+            <div className="w-1/2 py-1 px-2 bg-gray-50 border-r flex">
+              <span className="w-8 text-gray-500 inline-block text-right mr-3">{line.originalIndex + 1}</span>
+              {line.originalContent}
+            </div>
+            <div className="w-1/2 py-1 px-2 bg-gray-50 flex">
+              <span className="w-8 text-gray-500 inline-block text-right mr-3">{line.modifiedIndex + 1}</span>
+              {line.modifiedContent}
+            </div>
+          </div>
+        );
+      } else if (line.type === 'deletion') {
+        return (
+          <div key={`deletion-${index}`} className="flex relative group">
+            <div className="w-1/2 py-1 px-2 bg-red-900/10 text-red-900 border-r border-red-200 flex shadow-sm">
+              <span className="w-8 text-red-700 inline-block text-right mr-3">{line.originalIndex + 1}</span>
+              {line.originalContent}
+              <div className="absolute inset-y-0 left-1/2 -ml-12 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                  size="icon" 
+                  variant="outline" 
+                  className="h-6 w-6 rounded-full bg-white shadow-lg hover:bg-green-50"
+                  onClick={() => applyChange(index, 'left')}
+                  title="Keep this line"
+                >
+                  <Check className="h-3 w-3 text-green-600" />
+                </Button>
+              </div>
+            </div>
+            <div className="w-1/2 py-1 px-2 flex items-center">
+              <div className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-6 px-2 bg-white shadow hover:bg-red-50"
+                  onClick={() => applyChange(index, 'right')}
+                >
+                  <span className="text-xs text-red-600">Delete Line</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      } else { // addition
+        return (
+          <div key={`addition-${index}`} className="flex relative group">
+            <div className="w-1/2 py-1 px-2 border-r flex items-center">
+              <div className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-6 px-2 bg-white shadow hover:bg-red-50"
+                  onClick={() => applyChange(index, 'left')}
+                >
+                  <span className="text-xs text-red-600">Ignore Line</span>
+                </Button>
+              </div>
+            </div>
+            <div className="w-1/2 py-1 px-2 bg-green-900/10 text-green-900 border-green-200 flex shadow-sm">
+              <span className="w-8 text-green-700 inline-block text-right mr-3">{line.modifiedIndex + 1}</span>
+              {line.modifiedContent}
+              <div className="absolute inset-y-0 left-1/2 ml-3 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                  size="icon" 
+                  variant="outline" 
+                  className="h-6 w-6 rounded-full bg-white shadow-lg hover:bg-green-50"
+                  onClick={() => applyChange(index, 'right')}
+                  title="Add this line"
+                >
+                  <Check className="h-3 w-3 text-green-600" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+    });
   };
 
   return (
@@ -232,7 +446,7 @@ These lines weren't in the original text.`
         </CardHeader>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 p-1 rounded-md">
+            <TabsList className="grid w-full grid-cols-3 mb-6 bg-slate-100 p-1 rounded-md">
               <TabsTrigger value="input" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-md">
                 Input
               </TabsTrigger>
@@ -243,7 +457,15 @@ These lines weren't in the original text.`
               >
                 Diff Result
               </TabsTrigger>
+              <TabsTrigger 
+                value="merged" 
+                disabled={!diffResult}
+                className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-md"
+              >
+                Merged Result
+              </TabsTrigger>
             </TabsList>
+            
             <TabsContent value="input" className="pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -276,6 +498,7 @@ These lines weren't in the original text.`
                 </Button>
               </div>
             </TabsContent>
+            
             <TabsContent value="diff" className="pt-4 space-y-4">
               {diffResult && (
                 <>
@@ -291,24 +514,66 @@ These lines weren't in the original text.`
                         {stats.unchanged} Unchanged
                       </Badge>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copyResults}
-                      className="flex items-center bg-white shadow-sm hover:bg-gray-50"
-                      disabled={copied}
-                    >
-                      {copied ? "Copied!" : "Copy Results"}
-                      <Copy className="ml-2 h-4 w-4" />
-                    </Button>
+                    <div className="space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveTab("merged")}
+                        className="bg-white shadow-sm hover:bg-gray-50"
+                      >
+                        View Merged Result
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyResults}
+                        className="flex items-center bg-white shadow-sm hover:bg-gray-50"
+                        disabled={copied}
+                      >
+                        {copied ? "Copied!" : "Copy Results"}
+                        <Copy className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
+                  
+                  <div className="bg-primary/5 p-3 rounded-md mb-2 text-sm">
+                    <p><strong>Merge instructions:</strong> Hover over any changed line to see merge options. 
+                      Click <Check className="inline h-3 w-3 text-green-600" /> to keep or add a line, or use the "Delete/Ignore" button to remove or skip it.</p>
+                  </div>
+                  
                   <div className="max-h-[600px] overflow-auto rounded-lg shadow-md border">
                     <div className="flex border-b bg-slate-100 sticky top-0 z-10">
                       <div className="w-1/2 py-2 px-4 font-medium border-r">Original</div>
                       <div className="w-1/2 py-2 px-4 font-medium">Modified</div>
                     </div>
-                    {diffResult}
+                    <div className="overflow-auto font-mono text-sm">
+                      {renderDiffWithMergeOptions()}
+                    </div>
                   </div>
+                </>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="merged" className="pt-4 space-y-4">
+              {mergedText && (
+                <>
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="font-medium text-lg">Merged Result</div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyMergedText}
+                      className="flex items-center bg-white shadow-sm hover:bg-gray-50"
+                    >
+                      Copy Merged Text
+                      <Copy className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Textarea
+                    className="min-h-[400px] font-mono text-sm w-full"
+                    value={mergedText}
+                    onChange={(e) => setMergedText(e.target.value)}
+                  />
                 </>
               )}
             </TabsContent>

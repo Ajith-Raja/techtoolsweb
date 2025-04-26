@@ -64,7 +64,11 @@ async def generate_qr_code(
     gradient_end: Optional[str] = Form(None),
     logo: Optional[UploadFile] = File(None),
 ):
-    """Generate a QR code with custom styling"""
+    """Generate a QR code with custom styling
+    
+    This endpoint also supports VCard data - the frontend will format the data
+    correctly before sending it to this endpoint.
+    """
     
     try:
         # Validate error correction level

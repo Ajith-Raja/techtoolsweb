@@ -12,6 +12,11 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, Plus, Delete, ChevronDown, ChevronUp, Copy, Save, PlayCircle, Clock } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../lib/queryClient';
+import Prism from 'prismjs';
+import 'prismjs/themes/prism.css';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-markup';
+import 'prismjs/components/prism-css';
 
 // Define types
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
@@ -488,6 +493,79 @@ export default function ApiTester() {
     }
   };
 
+  // Helper function to detect content type
+  const detectContentType = (): 'json' | 'html' | 'text' => {
+    if (!response) return 'text';
+    
+    // Check Content-Type header (case-insensitive)
+    const contentTypeHeader = Object.keys(response.headers).find(
+      key => key.toLowerCase() === 'content-type'
+    );
+    
+    if (contentTypeHeader) {
+      const contentType = response.headers[contentTypeHeader].toLowerCase();
+      if (contentType.includes('application/json')) return 'json';
+      if (contentType.includes('text/html') || contentType.includes('application/html')) return 'html';
+    }
+    
+    // Try to detect based on content
+    if (typeof response.body === 'object') return 'json';
+    
+    if (typeof response.body === 'string') {
+      // Check if it looks like HTML
+      if (response.body.trim().startsWith('<') && response.body.includes('</')) return 'html';
+      
+      // Check if it looks like JSON
+      try {
+        JSON.parse(response.body);
+        return 'json';
+      } catch {
+        // Not JSON
+      }
+    }
+    
+    return 'text';
+  };
+  
+  // Apply Prism highlighting when response or tab changes
+  useEffect(() => {
+    if (response && responseTab === 'body') {
+      // Use a small timeout to ensure the DOM has been updated
+      const timeoutId = setTimeout(() => {
+        Prism.highlightAll();
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [response, responseTab]);
+  
+  // Function to render content with syntax highlighting
+  const renderHighlightedContent = () => {
+    if (!response) return null;
+    
+    const contentType = detectContentType();
+    let content = '';
+    
+    if (typeof response.body === 'object') {
+      content = JSON.stringify(response.body, null, 2);
+    } else {
+      content = String(response.body);
+    }
+    
+    // Apply appropriate class based on content type
+    const languageClass = 
+      contentType === 'json' ? 'language-json' : 
+      contentType === 'html' ? 'language-markup' : 
+      'language-text';
+    
+    return (
+      <pre className={`${languageClass} font-mono text-sm whitespace-pre-wrap break-words`}>
+        <code className={languageClass}>
+          {content}
+        </code>
+      </pre>
+    );
+  };
+
   // Render response based on tab
   const renderResponseView = () => {
     if (!response) return (
@@ -522,15 +600,7 @@ export default function ApiTester() {
           
           <TabsContent value="body" className="min-h-[300px]">
             <ScrollArea className="h-[300px] rounded-md border p-4">
-              {typeof response.body === 'object' ? (
-                <pre className="font-mono text-sm whitespace-pre-wrap break-words">
-                  {JSON.stringify(response.body, null, 2)}
-                </pre>
-              ) : (
-                <div className="font-mono text-sm whitespace-pre-wrap break-words">
-                  {response.body}
-                </div>
-              )}
+              {renderHighlightedContent()}
             </ScrollArea>
           </TabsContent>
           
