@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Plus, Delete, ChevronDown, ChevronUp, Copy, Save, PlayCircle, Clock } from 'lucide-react';
+import { Loader2, Plus, Delete, ChevronDown, ChevronUp, Copy, Save, PlayCircle, Clock, Share2, Check, Link } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../lib/queryClient';
 import Prism from 'prismjs';
@@ -97,6 +97,11 @@ export default function ApiTester() {
   
   // History state
   const [history, setHistory] = useState<ApiResponseData[]>([]);
+  
+  // Share state
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isCopiedShareUrl, setIsCopiedShareUrl] = useState(false);
   
   // UI state
   const [showHeaders, setShowHeaders] = useState(false);
@@ -287,6 +292,74 @@ export default function ApiTester() {
     }
   };
 
+  // Share request function
+  const shareRequest = async () => {
+    if (!response) {
+      toast({
+        title: "No request to share",
+        description: "Please make a request first before sharing",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      setIsSharing(true);
+      
+      // Create the request data to share
+      const requestData = {
+        request_data: response.request
+      };
+      
+      // Send the request to the share API
+      try {
+        const result = await apiRequest("POST", "http://localhost:8000/share", requestData);
+        const shareData = await result.json();
+        
+        if (shareData.share_id) {
+          // Create the share URL
+          const shareUrl = `${window.location.origin}/api-tester?share=${shareData.share_id}`;
+          setShareUrl(shareUrl);
+          
+          toast({
+            title: "Request shared successfully",
+            description: "Share link created! It will expire in 15 days."
+          });
+        }
+      } catch (error) {
+        console.error('API Server Error:', error);
+        toast({
+          title: "Sharing Failed",
+          description: "Make sure the API server is running by executing 'python start_api_server.py'",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Share request failed:', error);
+      toast({
+        title: "Share Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+  
+  // Copy share URL to clipboard
+  const copyShareUrl = () => {
+    if (!shareUrl) return;
+    
+    navigator.clipboard.writeText(shareUrl);
+    setIsCopiedShareUrl(true);
+    setTimeout(() => setIsCopiedShareUrl(false), 2000);
+    
+    toast({
+      title: "Copied to clipboard",
+      description: "Share URL copied to clipboard"
+    });
+  };
+  
   // Copy response to clipboard
   const copyResponseToClipboard = () => {
     if (!response) return;
@@ -585,10 +658,16 @@ export default function ApiTester() {
             <span className="text-muted-foreground">{response.time_taken.toFixed(0)} ms</span>
             <span className="text-muted-foreground">{(response.size / 1024).toFixed(2)} KB</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={copyResponseToClipboard}>
-            <Copy className="h-4 w-4 mr-2" />
-            Copy
-          </Button>
+          <div className="flex space-x-2">
+            <Button variant="ghost" size="sm" onClick={copyResponseToClipboard}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy
+            </Button>
+            <Button variant="ghost" size="sm" onClick={shareRequest} disabled={isSharing}>
+              {isSharing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Share2 className="h-4 w-4 mr-2" />}
+              Share
+            </Button>
+          </div>
         </div>
         
         <Tabs value={responseTab} onValueChange={setResponseTab} className="w-full">
@@ -700,6 +779,100 @@ export default function ApiTester() {
       }));
     }
   }, [request.bodyType, request.rawBodyFormat]);
+  
+  // Check for shared request in URL on component mount
+  useEffect(() => {
+    const checkForSharedRequest = async () => {
+      // Get the URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const shareId = urlParams.get('share');
+      
+      if (shareId) {
+        try {
+          // Attempt to fetch the shared request
+          const result = await apiRequest("GET", `http://localhost:8000/share/${shareId}`);
+          const sharedData = await result.json();
+          
+          if (sharedData.request_data) {
+            // Set up the request from the shared data
+            const apiReq = sharedData.request_data;
+            
+            // Transform API request format back to UI format
+            const newRequest: ApiRequestParams = {
+              method: apiReq.method as HttpMethod,
+              url: apiReq.url,
+              headers: [],
+              queryParams: [],
+              bodyType: apiReq.body_type as BodyType,
+              auth: { type: 'none' }
+            };
+            
+            // Convert headers from object to array format
+            if (apiReq.headers && typeof apiReq.headers === 'object') {
+              newRequest.headers = Object.entries(apiReq.headers).map(([key, value]) => ({
+                id: generateId(),
+                key,
+                value: value as string,
+                enabled: true
+              }));
+            }
+            
+            // Convert query params from object to array format
+            if (apiReq.query_params && typeof apiReq.query_params === 'object') {
+              newRequest.queryParams = Object.entries(apiReq.query_params).map(([key, value]) => ({
+                id: generateId(),
+                key,
+                value: value as string,
+                enabled: true
+              }));
+            }
+            
+            // Handle body based on type
+            if (apiReq.body_type === 'raw') {
+              newRequest.rawBodyFormat = apiReq.raw_body_format as RawBodyFormat;
+              
+              if (typeof apiReq.body === 'object') {
+                newRequest.body = JSON.stringify(apiReq.body, null, 2);
+              } else if (apiReq.body) {
+                newRequest.body = apiReq.body as string;
+              }
+            } else if (apiReq.body_type === 'form-data' || apiReq.body_type === 'x-www-form-urlencoded') {
+              if (apiReq.form_data && typeof apiReq.form_data === 'object') {
+                newRequest.formData = Object.entries(apiReq.form_data).map(([key, value]) => ({
+                  id: generateId(),
+                  key,
+                  value: value as string,
+                  enabled: true
+                }));
+              }
+            }
+            
+            // Handle auth if present
+            if (apiReq.auth) {
+              newRequest.auth = apiReq.auth as any;
+            }
+            
+            // Update the request
+            setRequest(newRequest);
+            
+            toast({
+              title: "Shared Request Loaded",
+              description: "A shared API request has been loaded. Click Send to execute it."
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load shared request:', error);
+          toast({
+            title: "Failed to Load Shared Request",
+            description: "The shared request could not be loaded. Make sure the API server is running.",
+            variant: "destructive"
+          });
+        }
+      }
+    };
+    
+    checkForSharedRequest();
+  }, []);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -714,6 +887,41 @@ export default function ApiTester() {
           <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md text-yellow-800 dark:text-yellow-200">
             <strong>Note:</strong> To use this feature, you need to start the FastAPI server by running <code className="bg-yellow-100 dark:bg-yellow-800/40 px-1 rounded">python start_api_server.py</code> in your terminal.
           </div>
+          
+          {shareUrl && (
+            <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-blue-800 dark:text-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <strong className="flex items-center">
+                    <Link className="h-4 w-4 mr-2" />
+                    Share URL
+                  </strong>
+                  <p className="text-sm mt-1">This link will expire in 15 days</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={copyShareUrl}
+                  className="bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 border-blue-200 dark:border-blue-700"
+                >
+                  {isCopiedShareUrl ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy URL
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="mt-2 p-2 bg-white dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800 text-sm font-mono truncate">
+                {shareUrl}
+              </div>
+            </div>
+          )}
         </CardHeader>
         
         <CardContent>
