@@ -17,7 +17,7 @@ python start_api_server.py &
 API_TESTER_PID=$!
 
 # Start PDF Tools API server in the background
-python start_pdf_tools_api.py &
+./start_pdf_service.sh &
 PDF_TOOLS_PID=$!
 
 echo "All servers are running!"
