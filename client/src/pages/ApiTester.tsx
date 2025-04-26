@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSearch } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Plus, Delete, ChevronDown, ChevronUp, Copy, Save, PlayCircle, Clock } from 'lucide-react';
+import { Loader2, Plus, Delete, ChevronDown, ChevronUp, Copy, Save, PlayCircle, Clock, Share2 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../lib/queryClient';
 import Prism from 'prismjs';
@@ -103,9 +104,99 @@ export default function ApiTester() {
   const [showQueryParams, setShowQueryParams] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareUrlCopied, setShareUrlCopied] = useState(false);
+  
+  // Parse search params
+  const search = useSearch();
+  const searchParams = new URLSearchParams(search);
+  const shareId = searchParams.get('share');
   
   // Refs for editor
   const bodyEditorRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Function to fetch a shared request
+  const fetchSharedRequest = async (id: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Use our Node.js proxy endpoint
+      const response = await fetch(`/api/shared/${id}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load shared request');
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.request_data) {
+        // Convert the API format back to the component format
+        const apiRequest = data.request_data;
+        
+        // Initialize the request
+        const newRequest: ApiRequestParams = {
+          method: apiRequest.method || 'GET',
+          url: apiRequest.url || '',
+          headers: [],
+          queryParams: [],
+          bodyType: apiRequest.body_type || 'none',
+          rawBodyFormat: apiRequest.raw_body_format,
+          body: typeof apiRequest.body === 'object' 
+            ? JSON.stringify(apiRequest.body, null, 2) 
+            : apiRequest.body,
+          auth: apiRequest.auth || { type: 'none' }
+        };
+        
+        // Add headers
+        if (apiRequest.headers) {
+          newRequest.headers = Object.entries(apiRequest.headers).map(([key, value]) => ({
+            id: generateId(),
+            key,
+            value: value as string,
+            enabled: true
+          }));
+        }
+        
+        // Add query params
+        if (apiRequest.query_params) {
+          newRequest.queryParams = Object.entries(apiRequest.query_params).map(([key, value]) => ({
+            id: generateId(),
+            key,
+            value: value as string,
+            enabled: true
+          }));
+        }
+        
+        // Add form data if needed
+        if ((apiRequest.body_type === 'form-data' || apiRequest.body_type === 'x-www-form-urlencoded') 
+            && apiRequest.form_data) {
+          newRequest.formData = Object.entries(apiRequest.form_data).map(([key, value]) => ({
+            id: generateId(),
+            key,
+            value: value as string,
+            enabled: true
+          }));
+        }
+        
+        setRequest(newRequest);
+        
+        toast({
+          title: "Shared Request Loaded",
+          description: "The shared API request has been loaded successfully."
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load shared request:', error);
+      toast({
+        title: "Error Loading Shared Request",
+        description: error instanceof Error ? error.message : "The shared request could not be loaded or has expired.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle method change
   const handleMethodChange = (value: HttpMethod) => {
@@ -261,8 +352,8 @@ export default function ApiTester() {
       const apiRequestData = transformRequestForApi();
       
       try {
-        // Try to connect to the FastAPI server
-        const result = await apiRequest("POST", "http://localhost:8000/api/execute", apiRequestData);
+        // Use our Node.js proxy endpoint to connect to the FastAPI server
+        const result = await apiRequest("POST", "/api/execute-request", apiRequestData);
         const responseData = await result.json() as ApiResponseData;
         
         setResponse(responseData);
@@ -314,6 +405,64 @@ export default function ApiTester() {
       title: "Copied to clipboard",
       description: `Response ${responseTab} copied to clipboard`
     });
+  };
+  
+  // Share request
+  const shareRequest = async () => {
+    try {
+      setIsSharing(true);
+      setShareUrl(null);
+      
+      const apiRequestData = transformRequestForApi();
+      
+      // Send the request to our Node.js proxy endpoint
+      const response = await fetch('/api/share-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ request_data: apiRequestData })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to share request');
+      }
+      
+      const data = await response.json();
+      
+      // Generate the shareable URL
+      const baseUrl = window.location.origin;
+      const shareableUrl = `${baseUrl}/api-tester?share=${data.share_id}`;
+      
+      setShareUrl(shareableUrl);
+    } catch (error) {
+      console.error('Share failed:', error);
+      toast({
+        title: "Share Failed",
+        description: error instanceof Error ? error.message : "Failed to create shareable link",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+  
+  // Copy share URL to clipboard
+  const copyShareUrl = () => {
+    if (!shareUrl) return;
+    
+    navigator.clipboard.writeText(shareUrl);
+    setShareUrlCopied(true);
+    
+    toast({
+      title: "Copied to clipboard",
+      description: "Shareable link copied to clipboard"
+    });
+    
+    // Reset the copied state after 2 seconds
+    setTimeout(() => {
+      setShareUrlCopied(false);
+    }, 2000);
   };
 
   // Render different form input based on auth type
@@ -527,6 +676,13 @@ export default function ApiTester() {
     return 'text';
   };
   
+  // Load shared request if share ID is present
+  useEffect(() => {
+    if (shareId) {
+      fetchSharedRequest(shareId);
+    }
+  }, [shareId]);
+
   // Apply Prism highlighting when response or tab changes
   useEffect(() => {
     if (response && responseTab === 'body') {
@@ -746,24 +902,68 @@ export default function ApiTester() {
                   />
                 </div>
                 
-                <Button 
-                  onClick={executeRequest} 
-                  disabled={isLoading || !request.url}
-                  className="min-w-[100px]"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle className="mr-2 h-4 w-4" />
-                      Send
-                    </>
-                  )}
-                </Button>
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={executeRequest} 
+                    disabled={isLoading || !request.url}
+                    className="min-w-[100px]"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Send
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    onClick={shareRequest}
+                    disabled={isSharing || !request.url}
+                    variant="outline"
+                  >
+                    {isSharing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sharing...
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="mr-2 h-4 w-4" />
+                        Share
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
+              
+              {/* Share URL display */}
+              {shareUrl && (
+                <div className="my-3 p-3 border rounded-md bg-muted/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium">Shareable Link</h4>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={copyShareUrl}
+                      className="h-8 px-2"
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      {shareUrlCopied ? 'Copied!' : 'Copy'}
+                    </Button>
+                  </div>
+                  <div className="bg-background p-2 rounded border text-sm font-mono break-all">
+                    {shareUrl}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This link will expire in 15 days. Anyone with this link can view and run this request.
+                  </p>
+                </div>
+              )}
               
               {/* Request Configuration Tabs */}
               <Tabs defaultValue="params" className="w-full">

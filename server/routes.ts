@@ -8,6 +8,7 @@ import { analyzeSiteSchema } from "@shared/schema";
 import { z } from "zod";
 import * as cheerio from 'cheerio';
 import { setupAuth } from "./auth";
+import fetch from "node-fetch";
 import { 
   getPageMetadata, 
   applyMetadata, 
@@ -784,6 +785,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]
     };
   }
+
+  // API tester functionality - proxy endpoints
+  app.post("/api/share-request", async (req, res) => {
+    try {
+      // Forward the request to the Python API
+      const apiUrl = "http://localhost:8000/share";
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(req.body),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error sharing API request:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to share API request"
+      });
+    }
+  });
+  
+  app.get("/api/shared/:shareId", async (req, res) => {
+    try {
+      const { shareId } = req.params;
+      
+      // Forward the request to the Python API
+      const apiUrl = `http://localhost:8000/shared/${shareId}`;
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return res.status(404).json({ message: "Shared request not found or expired" });
+        }
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error retrieving shared API request:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to retrieve shared API request"
+      });
+    }
+  });
+  
+  app.post("/api/execute-request", async (req, res) => {
+    try {
+      // Forward the request to the Python API
+      const apiUrl = "http://localhost:8000/api/execute";
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(req.body),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error executing API request:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to execute API request"
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
