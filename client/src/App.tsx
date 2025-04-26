@@ -54,6 +54,7 @@ const ExtractImages = lazy(() => import("./pages/pdf-tools/ExtractImages"));
 const WordToPdf = lazy(() => import("./pages/pdf-tools/WordToPdf"));
 const YoutubeDownloader = lazy(() => import("./pages/YoutubeDownloader"));
 const QRCodeGenerator = lazy(() => import("./pages/QRCodeGenerator"));
+const RegexTester = lazy(() => import("./pages/RegexTester"));
 
 // Lazy load Calculator pages
 const CalculatorsHome = lazy(() => import("./pages/calculators/CalculatorsHome"));
@@ -122,6 +123,7 @@ function Router() {
           <LazyRoute path="/api-tester" component={ApiTester} />
           <LazyRoute path="/youtube-downloader" component={YoutubeDownloader} />
           <LazyRoute path="/qr-code-generator" component={QRCodeGenerator} />
+          <LazyRoute path="/regex-tester" component={RegexTester} />
           
           {/* Premium features - requires authentication */}
           <LazyProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />

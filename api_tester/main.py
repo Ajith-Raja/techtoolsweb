@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request, Depends, Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field, HttpUrl
 from typing import Dict, List, Optional, Any, Union
 import httpx
@@ -8,6 +9,7 @@ import time
 from datetime import datetime
 import uuid
 from enum import Enum
+import os
 
 app = FastAPI(title="API Testing Tool", description="A FastAPI backend for a Postman-like API testing tool")
 
@@ -19,6 +21,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Import and include the share service router
+try:
+    from api_tester.share_service import router as share_router
+    app.include_router(share_router, prefix="/api", tags=["sharing"])
+    print("API sharing endpoints enabled")
+except ImportError as e:
+    print(f"Warning: API sharing endpoints not available: {e}")
 
 # In-memory storage (would be replaced with database in production)
 class InMemoryDB:
@@ -92,6 +102,22 @@ class Environment(BaseModel):
 @app.get("/")
 async def root():
     return {"message": "API Testing Tool API is running"}
+
+@app.get("/s/{share_id}")
+async def redirect_to_shared_request(share_id: str, request: Request):
+    """
+    Redirect to the API Tester UI with the shared request ID
+    """
+    # Get the base URL from the request
+    base_url = str(request.base_url)
+    if base_url.endswith("/"):
+        base_url = base_url[:-1]  # Remove trailing slash
+    
+    # Frontend URL with the shared ID
+    frontend_url = f"{base_url}/api-tester?share={share_id}"
+    
+    # Redirect to the frontend
+    return RedirectResponse(url=frontend_url)
 
 @app.post("/api/execute", response_model=ApiResponse)
 async def execute_request(request: ApiRequest):

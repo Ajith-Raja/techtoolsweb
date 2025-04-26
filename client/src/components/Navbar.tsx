@@ -117,11 +117,6 @@ export function Navbar() {
       icon: <Image className="mr-2 h-4 w-4" />,
     },
     {
-      name: "YouTube Downloader",
-      href: "/youtube-downloader",
-      icon: <Youtube className="mr-2 h-4 w-4" />,
-    },
-    {
       name: "Pre-Launch Audit",
       href: "/pre-launch-audit",
       icon: <CheckSquare className="mr-2 h-4 w-4" />,
@@ -199,6 +194,16 @@ export function Navbar() {
       name: "API Tester",
       href: "/api-tester",
       icon: <Settings className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "YouTube Downloader",
+      href: "/youtube-downloader",
+      icon: <Youtube className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Regex Tester",
+      href: "/regex-tester",
+      icon: <FileText className="mr-2 h-4 w-4" />,
     }
   ];
 

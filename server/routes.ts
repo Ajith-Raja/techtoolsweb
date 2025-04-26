@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { analyzeSite } from "./seo-analyzer";
 import { analyzeReadability } from "./readability-analyzer";
@@ -8,6 +8,13 @@ import { analyzeSiteSchema } from "@shared/schema";
 import { z } from "zod";
 import * as cheerio from 'cheerio';
 import { setupAuth } from "./auth";
+import { 
+  getPageMetadata, 
+  applyMetadata, 
+  shouldPreloadData, 
+  getPreloadedData, 
+  injectPreloadedData 
+} from "./ssr";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -505,77 +512,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // We'll comment out the server-side rendering for now since it may be conflicting with Vite
-  // Server-side rendering for blog posts and SEO-critical pages
-  /*app.get("/:page", (req: Request, res: Response, next) => {
+  // Server-side rendering for all pages to improve SEO
+  app.get("/:page*", async (req: Request, res: Response, next: NextFunction) => {
+    // Extract the full path from the request
+    const fullPath = req.originalUrl;
+    
     // Skip server-side rendering for API routes and static assets
-    const { page } = req.params;
-    if (page.startsWith('api') || page.endsWith('.js') || page.endsWith('.css') || page.endsWith('.ico')) {
+    if (
+      fullPath.startsWith('/api') || 
+      fullPath.endsWith('.js') || 
+      fullPath.endsWith('.css') || 
+      fullPath.endsWith('.ico') || 
+      fullPath.endsWith('.png') || 
+      fullPath.endsWith('.jpg') || 
+      fullPath.endsWith('.svg') || 
+      fullPath.endsWith('.woff') || 
+      fullPath.endsWith('.woff2')
+    ) {
       return next();
     }
     
     // Get the index.html content
     try {
-      // We need to read the index.html file to modify it
-      import('fs').then(fs => {
-        fs.readFile('./client/index.html', 'utf8', (err, data) => {
-          if (err) {
-            console.error('Error reading index.html:', err);
-            return next();
+      // We need to read the index.html file
+      const fs = await import('fs');
+      
+      try {
+        const data = await fs.promises.readFile('./client/index.html', 'utf8');
+        
+        // Get page metadata
+        const metadata = getPageMetadata(fullPath, req);
+        
+        // Apply metadata to the HTML
+        let modifiedHtml = applyMetadata(data, metadata);
+        
+        // If this page should have preloaded data for SEO purposes
+        if (shouldPreloadData(fullPath)) {
+          try {
+            // Get the preloaded data
+            const preloadedData = await getPreloadedData(fullPath);
+            
+            // Inject the preloaded data into the HTML
+            modifiedHtml = injectPreloadedData(modifiedHtml, preloadedData);
+          } catch (preloadError) {
+            console.error('Error preloading data:', preloadError);
+            // Continue without preloaded data
           }
-          
-          // Use cheerio to manipulate the HTML
-          const $ = cheerio.load(data);
-          const pageTitle = getPageTitle(page);
-          const pageDescription = getPageDescription(page);
-          
-          // Update meta tags for SEO
-          $('title').text(pageTitle);
-          $('meta[name="description"]').attr('content', pageDescription);
-          
-          // Add Open Graph tags
-          if (!$('meta[property="og:title"]').length) {
-            $('head').append(`<meta property="og:title" content="${pageTitle}" />`);
-          } else {
-            $('meta[property="og:title"]').attr('content', pageTitle);
-          }
-          
-          if (!$('meta[property="og:description"]').length) {
-            $('head').append(`<meta property="og:description" content="${pageDescription}" />`);
-          } else {
-            $('meta[property="og:description"]').attr('content', pageDescription);
-          }
-          
-          if (!$('meta[property="og:type"]').length) {
-            $('head').append(`<meta property="og:type" content="website" />`);
-          }
-          
-          // Update canonical URL
-          const canonicalUrl = `https://${req.get('host')}/${page}`;
-          if (!$('link[rel="canonical"]').length) {
-            $('head').append(`<link rel="canonical" href="${canonicalUrl}" />`);
-          } else {
-            $('link[rel="canonical"]').attr('href', canonicalUrl);
-          }
-          
-          // Add structured data for SEO (if blog post or tool page)
-          if (isToolPage(page)) {
-            const structuredData = getStructuredData(page, req.get('host') || '');
-            $('head').append(`<script type="application/ld+json">${JSON.stringify(structuredData)}</script>`);
-          }
-          
-          // Send the modified HTML
-          res.send($.html());
-        });
-      }).catch(err => {
-        console.error('Error importing fs module:', err);
+        }
+        
+        // For tool pages, add structured data to help with rich snippets
+        const pageName = fullPath.split('/')[1] || '';
+        if (isToolPage(pageName)) {
+          const $ = cheerio.load(modifiedHtml);
+          const structuredData = getStructuredData(pageName, req.get('host') || '');
+          $('head').append(`<script type="application/ld+json">${JSON.stringify(structuredData)}</script>`);
+          modifiedHtml = $.html();
+        }
+        
+        // Send the modified HTML
+        res.send(modifiedHtml);
+      } catch (fileError) {
+        console.error('Error reading index.html:', fileError);
         next();
-      });
+      }
     } catch (error) {
       console.error('Error in server-side rendering:', error);
       next();
     }
-  });*/
+  });
 
   // Helper functions for SSR
   function getPageTitle(page: string): string {
