@@ -52,13 +52,20 @@ export default function QRCodeGenerator() {
 
   useEffect(() => {
     // Fetch available style options when component mounts
-    fetch("http://localhost:8000/styles")
+    const apiUrl = `${window.location.protocol}//${window.location.hostname}:8000/styles`;
+    fetch(apiUrl)
       .then(response => response.json())
       .then(data => {
         setStyleOptions(data);
       })
       .catch(error => {
         console.error("Error fetching QR style options:", error);
+        // Fallback options if API is unavailable
+        setStyleOptions({
+          moduleDrawers: ["square", "gapped", "circle", "rounded", "vertical", "horizontal"],
+          colorMasks: ["solid", "radial", "square", "horizontal", "vertical"],
+          errorCorrectionLevels: ["L", "M", "Q", "H"]
+        });
       });
   }, []);
 
@@ -93,7 +100,8 @@ export default function QRCodeGenerator() {
         formData.append("logo", logo);
       }
 
-      const response = await fetch("http://localhost:8000/generate", {
+      const apiUrl = `${window.location.protocol}//${window.location.hostname}:8000/generate`;
+      const response = await fetch(apiUrl, {
         method: "POST",
         body: formData,
       });
