@@ -47,6 +47,7 @@ import ExtractText from "./pages/pdf-tools/ExtractText";
 import ExtractImages from "./pages/pdf-tools/ExtractImages";
 import WordToPdf from "./pages/pdf-tools/WordToPdf";
 import YoutubeDownloader from "./pages/YoutubeDownloader";
+import QRCodeGenerator from "./pages/QRCodeGenerator";
 
 // Import Calculator pages
 import CalculatorsHome from "./pages/calculators/CalculatorsHome";
@@ -79,6 +80,7 @@ function Router() {
           <Route path="/diff-checker" component={DiffChecker} />
           <Route path="/api-tester" component={ApiTester} />
           <Route path="/youtube-downloader" component={YoutubeDownloader} />
+          <Route path="/qr-code-generator" component={QRCodeGenerator} />
           {/* Premium features - requires authentication */}
           <ProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
           <ProtectedRoute path="/content-gap-analyzer" component={ContentGapAnalyzer} />

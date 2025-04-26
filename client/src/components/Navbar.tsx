@@ -38,6 +38,7 @@ import {
   Calculator,
   DollarSign,
   ArrowLeftRight,
+  QrCode,
   Receipt,
   PiggyBank,
 } from "lucide-react";
@@ -72,12 +73,6 @@ export function Navbar() {
   const { user, logoutMutation, isLoading } = useAuth();
 
   const mainNavigation: NavItem[] = [
-    { name: "Home", href: "/", icon: <HomeIcon className="mr-2 h-4 w-4" /> },
-    {
-      name: "Diff Checker",
-      href: "/diff-checker",
-      icon: <GitCompare className="mr-2 h-4 w-4" />,
-    },
   ];
 
   const toolsNavigation: NavItem[] = [
@@ -186,6 +181,16 @@ export function Navbar() {
   
   const otherToolsNavigation: NavItem[] = [
     {
+      name: "QR Code Generator",
+      href: "/qr-code-generator",
+      icon: <QrCode className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Diff Checker",
+      href: "/diff-checker",
+      icon: <GitCompare className="mr-2 h-4 w-4" />,
+    },
+    {
       name: "Transliterate",
       href: "/transliterate",
       icon: <Languages className="mr-2 h-4 w-4" />,
@@ -194,7 +199,7 @@ export function Navbar() {
       name: "API Tester",
       href: "/api-tester",
       icon: <Settings className="mr-2 h-4 w-4" />,
-    },
+    }
   ];
 
   const pdfToolsNavigation: NavItem[] = [
