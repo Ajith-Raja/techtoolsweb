@@ -19,7 +19,41 @@ export default function MergePdf() {
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Hook for real-time progress tracking
+  usePdfProgress(taskId, (progressData: PdfProgress) => {
+    if (progressData.status === 'processing') {
+      setProgress(progressData.progress);
+    } else if (progressData.status === 'success') {
+      setProgress(100);
+      setProcessing(false);
+      setCompleted(true);
+      checkTaskStatus(taskId as string)
+        .then(result => {
+          if (result.download_url) {
+            setDownloadUrl(result.download_url);
+          }
+        })
+        .catch(console.error);
+      
+      toast({
+        title: 'PDFs Merged Successfully',
+        description: 'Your merged PDF is ready to download.',
+      });
+    } else if (progressData.status === 'error') {
+      setProcessing(false);
+      setError(progressData.error || 'An error occurred during merging');
+      toast({
+        title: 'Merge Failed',
+        description: progressData.error || 'An error occurred during merging',
+        variant: 'destructive',
+      });
+    }
+  });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files;
@@ -81,7 +115,7 @@ export default function MergePdf() {
     setFiles(newFiles);
   };
 
-  const handleMerge = () => {
+  const handleMerge = async () => {
     if (files.length < 2) {
       toast({
         title: 'Not enough files',
@@ -92,29 +126,41 @@ export default function MergePdf() {
     }
     
     setProcessing(true);
+    setError(null);
     
-    // Simulate merge progress
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
+    try {
+      // Extract the File objects in the correct order
+      const pdfFiles = files.map(f => f.file);
       
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        toast({
-          title: 'PDFs Merged Successfully',
-          description: 'Your merged PDF is ready to download.',
-        });
-      }
-    }, 300);
+      // Call the API to merge PDFs
+      const newTaskId = await mergePdfs(pdfFiles);
+      setTaskId(newTaskId);
+    } catch (err) {
+      setProcessing(false);
+      setError((err as Error).message);
+      toast({
+        title: 'Merge Failed',
+        description: (err as Error).message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const resetForm = () => {
     setFiles([]);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
+  };
+  
+  const handleDownload = () => {
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
+    } else if (taskId) {
+      window.open(getDownloadUrl(taskId), '_blank');
+    }
   };
 
   return (
@@ -233,6 +279,14 @@ export default function MergePdf() {
                   </div>
                 )}
                 
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                
                 {(processing || completed) && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -280,6 +334,7 @@ export default function MergePdf() {
                 <Button
                   variant="default"
                   className="w-full sm:w-auto"
+                  onClick={handleDownload}
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Download Merged PDF
