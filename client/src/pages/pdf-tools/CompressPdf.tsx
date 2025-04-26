@@ -1,20 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
-import { FileText, Upload, Download, Trash } from 'lucide-react';
+import { FileText, Upload, Download, Trash, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { compressPdf, usePdfProgress, checkTaskStatus, getDownloadUrl, PdfProgress } from '@/lib/pdfService';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function CompressPdf() {
   const [file, setFile] = useState<File | null>(null);
-  const [compressionLevel, setCompressionLevel] = useState<number>(50);
+  const [compressionLevel, setCompressionLevel] = useState<number>(80);
   const [uploading, setUploading] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Hook for real-time progress tracking
+  usePdfProgress(taskId, (progressData: PdfProgress) => {
+    if (progressData.status === 'processing') {
+      setProgress(progressData.progress);
+    } else if (progressData.status === 'success') {
+      setProgress(100);
+      setUploading(false);
+      setCompleted(true);
+      checkTaskStatus(taskId as string)
+        .then(result => {
+          if (result.download_url) {
+            setDownloadUrl(result.download_url);
+          }
+        })
+        .catch(console.error);
+      
+      toast({
+        title: 'PDF Compressed Successfully',
+        description: 'Your file is ready to download.',
+      });
+    } else if (progressData.status === 'error') {
+      setUploading(false);
+      setError(progressData.error || 'An error occurred during compression');
+    }
+  });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -41,6 +72,9 @@ export default function CompressPdf() {
       setFile(selectedFile);
       setProgress(0);
       setCompleted(false);
+      setError(null);
+      setTaskId(null);
+      setDownloadUrl(null);
     }
   };
 
@@ -48,34 +82,46 @@ export default function CompressPdf() {
     setCompressionLevel(value[0]);
   };
 
-  const handleCompression = () => {
+  const handleCompression = async () => {
     if (!file) return;
     
     setUploading(true);
+    setError(null);
     
-    // Simulate compression progress
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
+    try {
+      // Get quality level (100 - compression level to invert the scale)
+      const quality = 100 - compressionLevel;
       
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setUploading(false);
-        setCompleted(true);
-        toast({
-          title: 'PDF Compressed Successfully',
-          description: 'Your file is ready to download.',
-        });
-      }
-    }, 500);
+      // Call the API to compress the PDF
+      const newTaskId = await compressPdf(file, quality);
+      setTaskId(newTaskId);
+    } catch (err) {
+      setUploading(false);
+      setError((err as Error).message);
+      toast({
+        title: 'Compression Failed',
+        description: (err as Error).message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownload = () => {
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
+    } else if (taskId) {
+      window.open(getDownloadUrl(taskId), '_blank');
+    }
   };
 
   const resetForm = () => {
     setFile(null);
-    setCompressionLevel(50);
+    setCompressionLevel(80);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
   };
 
   const getCompressionLevelText = () => {
@@ -154,7 +200,7 @@ export default function CompressPdf() {
                     </span>
                   </div>
                   <Slider
-                    defaultValue={[50]}
+                    defaultValue={[80]}
                     max={100}
                     step={1}
                     onValueChange={handleCompressionChange}
@@ -166,6 +212,14 @@ export default function CompressPdf() {
                     <span>Smaller Size</span>
                   </div>
                 </div>
+                
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
                 
                 {(uploading || completed) && (
                   <div className="space-y-2">
@@ -206,6 +260,7 @@ export default function CompressPdf() {
               <Button
                 variant="default"
                 className="w-full sm:w-auto"
+                onClick={handleDownload}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Compressed PDF

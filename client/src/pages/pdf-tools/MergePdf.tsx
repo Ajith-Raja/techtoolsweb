@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { FileText, Download, Plus, ArrowUp, ArrowDown, X, MoveVertical } from 'lucide-react';
+import { FileText, Download, Plus, ArrowUp, ArrowDown, X, MoveVertical, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { mergePdfs, usePdfProgress, checkTaskStatus, getDownloadUrl, PdfProgress } from '@/lib/pdfService';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface FileWithId {
   id: string;
