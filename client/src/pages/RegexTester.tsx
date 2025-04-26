@@ -16,7 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css';
+// Base components
 import 'prismjs/components/prism-core';
+// Essential language components 
+import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-java';
@@ -29,6 +32,8 @@ import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-css';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-markup-templating';
+// Additional dependencies
+import 'prismjs/components/prism-bash';
 
 type Language = 'javascript' | 'python' | 'java' | 'csharp' | 'php' | 'ruby' | 'go' | 'rust';
 
@@ -583,21 +588,23 @@ const RegexTester: React.FC = () => {
               <div className="flex justify-between items-center">
                 <CardTitle>Code Snippet</CardTitle>
                 <div className="flex space-x-2">
-                  <Select
-                    value={language}
-                    onValueChange={(value) => setLanguage(value as Language)}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {languageOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="w-full">
+                    <Select
+                      value={language}
+                      onValueChange={(value) => setLanguage(value as Language)}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languageOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Button 
                     size="sm" 
                     variant="outline" 
@@ -620,21 +627,23 @@ const RegexTester: React.FC = () => {
 
               <div className="mt-4 flex items-center">
                 <Label htmlFor="color-theme" className="mr-3">Color Theme:</Label>
-                <Select
-                  value={colorTheme}
-                  onValueChange={(value) => setColorTheme(value as ColorTheme)}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Color Theme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(colorThemes).map(theme => (
-                      <SelectItem key={theme} value={theme}>
-                        {theme.charAt(0).toUpperCase() + theme.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="w-[180px]">
+                  <Select
+                    value={colorTheme}
+                    onValueChange={(value) => setColorTheme(value as ColorTheme)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Color Theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(colorThemes).map(theme => (
+                        <SelectItem key={theme} value={theme}>
+                          {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -702,8 +711,8 @@ const RegexTester: React.FC = () => {
       {/* Additional Resources */}
       <div className="mt-6 text-center">
         <h3 className="text-lg font-semibold mb-2">Learn More About Regular Expressions</h3>
-        <div className="flex justify-center space-x-4">
-          <TooltipProvider>
+        <TooltipProvider>
+          <div className="flex justify-center space-x-4">
             <Tooltip>
               <TooltipTrigger asChild>
                 <a 
@@ -719,9 +728,7 @@ const RegexTester: React.FC = () => {
                 <p>Mozilla's guide to regular expressions</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <a 
@@ -737,9 +744,7 @@ const RegexTester: React.FC = () => {
                 <p>Advanced regex testing and debugging</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <a 
@@ -755,8 +760,8 @@ const RegexTester: React.FC = () => {
                 <p>Interactive regex learning tool</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-        </div>
+          </div>
+        </TooltipProvider>
       </div>
     </div>
   );

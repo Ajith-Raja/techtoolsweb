@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# This script starts both the Node.js main application and the Python API Testing server
-# Use Ctrl+C to stop both servers
+# This script starts the Node.js main application and the Python API servers
+# Use Ctrl+C to stop all servers
 
-echo "Starting both servers..."
+echo "Starting all servers..."
 
 # Start Node.js server in the background
 npm run dev &
@@ -12,22 +12,27 @@ NODE_PID=$!
 # Wait a moment to allow Node.js server to start
 sleep 2
 
-# Start Python API server in the background
+# Start Python API Testing server in the background
 python start_api_server.py &
-PYTHON_PID=$!
+API_TESTER_PID=$!
 
-echo "Both servers are running!"
-echo "Main application: http://localhost:5001"
+# Start PDF Tools API server in the background
+python start_pdf_tools_api.py &
+PDF_TOOLS_PID=$!
+
+echo "All servers are running!"
+echo "Main application: http://localhost:5000"
 echo "API Testing server: http://localhost:8000"
-echo "Press Ctrl+C to stop both servers"
+echo "PDF Tools API: http://localhost:8001"
+echo "Press Ctrl+C to stop all servers"
 
-# Trap Ctrl+C and kill both processes
-trap "kill $NODE_PID $PYTHON_PID; exit" INT
+# Trap Ctrl+C and kill all processes
+trap "kill $NODE_PID $API_TESTER_PID $PDF_TOOLS_PID; exit" INT
 
 # Wait for any process to exit
 wait -n
 
 # Kill remaining processes
-kill $NODE_PID $PYTHON_PID 2>/dev/null
+kill $NODE_PID $API_TESTER_PID $PDF_TOOLS_PID 2>/dev/null
 
 echo "All servers stopped"
