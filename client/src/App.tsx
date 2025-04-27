@@ -1,4 +1,3 @@
-import { lazy, Suspense } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -7,100 +6,62 @@ import { Navbar } from "@/components/NavbarNew";
 import { Footer } from "@/components/Footer";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
-import { Loader2 } from "lucide-react";
 
-// Direct imports for critical components
+// Direct imports for all components
 import Home from "@/pages/Home";
 import NotFound from "@/pages/not-found";
+import Results from "@/pages/Results";
+import SchemaGenerator from "./pages/SchemaGenerator";
+import DomainAgeChecker from "./pages/DomainAgeChecker";
+import DomainAuthorityChecker from "./pages/DomainAuthorityChecker";
+import PlagiarismChecker from "./pages/PlagiarismChecker";
+import ReadabilityChecker from "./pages/ReadabilityChecker";
+import KeywordDensityChecker from "./pages/KeywordDensityChecker";
+import FontGenerator from "./pages/FontGenerator";
+import ImageCompressor from "./pages/ImageCompressor";
+import Transliterate from "./pages/Transliterate";
+import DiffChecker from "./pages/DiffChecker";
+import ApiTester from "./pages/ApiTester";
+import About from "./pages/About";
+import Features from "./pages/Features";
+import PreLaunchAudit from "./pages/PreLaunchAudit";
+import ContentGapAnalyzer from "./pages/ContentGapAnalyzer";
+import AnalysisHistory from "./pages/AnalysisHistory";
+import AuthPage from "./pages/auth-page";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
-// Lazy load all other pages
-const Results = lazy(() => import("@/pages/Results"));
-const SchemaGenerator = lazy(() => import("./pages/SchemaGenerator"));
-const DomainAgeChecker = lazy(() => import("./pages/DomainAgeChecker"));
-const DomainAuthorityChecker = lazy(() => import("./pages/DomainAuthorityChecker"));
-const PlagiarismChecker = lazy(() => import("./pages/PlagiarismChecker"));
-const ReadabilityChecker = lazy(() => import("./pages/ReadabilityChecker"));
-const KeywordDensityChecker = lazy(() => import("./pages/KeywordDensityChecker"));
-const FontGenerator = lazy(() => import("./pages/FontGenerator"));
-const ImageCompressor = lazy(() => import("./pages/ImageCompressor"));
-const Transliterate = lazy(() => import("./pages/Transliterate"));
-const DiffChecker = lazy(() => import("./pages/DiffChecker"));
-const ApiTester = lazy(() => import("./pages/ApiTester"));
-const About = lazy(() => import("./pages/About"));
-const Features = lazy(() => import("./pages/Features"));
-const PreLaunchAudit = lazy(() => import("./pages/PreLaunchAudit"));
-const ContentGapAnalyzer = lazy(() => import("./pages/ContentGapAnalyzer"));
-const AnalysisHistory = lazy(() => import("./pages/AnalysisHistory"));
-const AuthPage = lazy(() => import("./pages/auth-page"));
-const Login = lazy(() => import("./pages/Login"));
-const Signup = lazy(() => import("./pages/Signup"));
+// PDF Tools pages
+import PdfToolsHome from "./pages/pdf-tools/PdfToolsHome";
+import CompressPdf from "./pages/pdf-tools/CompressPdf";
+import PdfToWord from "./pages/pdf-tools/PdfToWord";
+import PdfToImage from "./pages/pdf-tools/PdfToImage";
+import MergePdf from "./pages/pdf-tools/MergePdf";
+import SplitPdf from "./pages/pdf-tools/SplitPdf";
+import RotatePdf from "./pages/pdf-tools/RotatePdf";
+import ProtectPdf from "./pages/pdf-tools/ProtectPdf";
+import UnlockPdf from "./pages/pdf-tools/UnlockPdf";
+import WatermarkPdf from "./pages/pdf-tools/WatermarkPdf";
+import EditMetadata from "./pages/pdf-tools/EditMetadata";
+import RemovePages from "./pages/pdf-tools/RemovePages";
+import ReorderPdf from "./pages/pdf-tools/ReorderPdf";
+import ExtractText from "./pages/pdf-tools/ExtractText";
+import ExtractImages from "./pages/pdf-tools/ExtractImages";
+import WordToPdf from "./pages/pdf-tools/WordToPdf";
+import YoutubeDownloader from "./pages/YoutubeDownloader";
+import QRCodeGenerator from "./pages/QRCodeGenerator";
+import RegexTester from "./pages/RegexTester";
 
-// Lazy load PDF Tools pages
-const PdfToolsHome = lazy(() => import("./pages/pdf-tools/PdfToolsHome"));
-const CompressPdf = lazy(() => import("./pages/pdf-tools/CompressPdf"));
-const PdfToWord = lazy(() => import("./pages/pdf-tools/PdfToWord"));
-const PdfToImage = lazy(() => import("./pages/pdf-tools/PdfToImage"));
-const MergePdf = lazy(() => import("./pages/pdf-tools/MergePdf"));
-const SplitPdf = lazy(() => import("./pages/pdf-tools/SplitPdf"));
-const RotatePdf = lazy(() => import("./pages/pdf-tools/RotatePdf"));
-const ProtectPdf = lazy(() => import("./pages/pdf-tools/ProtectPdf"));
-const UnlockPdf = lazy(() => import("./pages/pdf-tools/UnlockPdf"));
-const WatermarkPdf = lazy(() => import("./pages/pdf-tools/WatermarkPdf"));
-const EditMetadata = lazy(() => import("./pages/pdf-tools/EditMetadata"));
-const RemovePages = lazy(() => import("./pages/pdf-tools/RemovePages"));
-const ReorderPdf = lazy(() => import("./pages/pdf-tools/ReorderPdf"));
-const ExtractText = lazy(() => import("./pages/pdf-tools/ExtractText"));
-const ExtractImages = lazy(() => import("./pages/pdf-tools/ExtractImages"));
-const WordToPdf = lazy(() => import("./pages/pdf-tools/WordToPdf"));
-const YoutubeDownloader = lazy(() => import("./pages/YoutubeDownloader"));
-const QRCodeGenerator = lazy(() => import("./pages/QRCodeGenerator"));
-const RegexTester = lazy(() => import("./pages/RegexTester"));
-
-// Lazy load Calculator pages
-const CalculatorsHome = lazy(() => import("./pages/calculators/CalculatorsHome"));
-const PercentageCalculator = lazy(() => import("./pages/calculators/PercentageCalculator"));
-const EMICalculator = lazy(() => import("./pages/calculators/EMICalculator"));
-const GSTCalculator = lazy(() => import("./pages/calculators/GSTCalculator"));
-const UnitConverter = lazy(() => import("./pages/calculators/UnitConverter"));
-const SIPCalculator = lazy(() => import("./pages/calculators/SIPCalculator"));
-const RetirementCalculator = lazy(() => import("./pages/calculators/RetirementCalculator"));
-const InvestmentCalculator = lazy(() => import("./pages/calculators/InvestmentCalculator"));
-const IncomeTaxCalculator = lazy(() => import("./pages/calculators/IncomeTaxCalculator"));
-
-// Loading component for Suspense
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <Loader2 className="h-10 w-10 text-primary animate-spin" />
-  </div>
-);
-
-// HOC to wrap lazy-loaded components with Suspense
-const LazyRoute = ({ component: Component, ...rest }: any) => {
-  return (
-    <Route
-      {...rest}
-      component={(props: any) => (
-        <Suspense fallback={<PageLoader />}>
-          <Component {...props} />
-        </Suspense>
-      )}
-    />
-  );
-};
-
-// HOC for protected lazy routes
-const LazyProtectedRoute = ({ component: Component, ...rest }: any) => {
-  return (
-    <ProtectedRoute
-      {...rest}
-      component={(props: any) => (
-        <Suspense fallback={<PageLoader />}>
-          <Component {...props} />
-        </Suspense>
-      )}
-    />
-  );
-};
+// Calculator pages
+import CalculatorsHome from "./pages/calculators/CalculatorsHome";
+import PercentageCalculator from "./pages/calculators/PercentageCalculator";
+import EMICalculator from "./pages/calculators/EMICalculator";
+import GSTCalculator from "./pages/calculators/GSTCalculator";
+import UnitConverter from "./pages/calculators/UnitConverter";
+import SIPCalculator from "./pages/calculators/SIPCalculator";
+import RetirementCalculator from "./pages/calculators/RetirementCalculator";
+import InvestmentCalculator from "./pages/calculators/InvestmentCalculator";
+import IncomeTaxCalculator from "./pages/calculators/IncomeTaxCalculator";
 
 function Router() {
   return (
@@ -109,62 +70,62 @@ function Router() {
       <main className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
-          <LazyRoute path="/results" component={Results} />
-          <LazyRoute path="/schema" component={SchemaGenerator} />
-          <LazyRoute path="/domain-age" component={DomainAgeChecker} />
-          <LazyRoute path="/domain-authority" component={DomainAuthorityChecker} />
-          <LazyRoute path="/plagiarism" component={PlagiarismChecker} />
-          <LazyRoute path="/readability" component={ReadabilityChecker} />
-          <LazyRoute path="/keyword-density" component={KeywordDensityChecker} />
-          <LazyRoute path="/font-generator" component={FontGenerator} />
-          <LazyRoute path="/image-compressor" component={ImageCompressor} />
-          <LazyRoute path="/transliterate" component={Transliterate} />
-          <LazyRoute path="/diff-checker" component={DiffChecker} />
-          <LazyRoute path="/api-tester" component={ApiTester} />
-          <LazyRoute path="/youtube-downloader" component={YoutubeDownloader} />
-          <LazyRoute path="/qr-code-generator" component={QRCodeGenerator} />
-          <LazyRoute path="/regex-tester" component={RegexTester} />
+          <Route path="/results" component={Results} />
+          <Route path="/schema" component={SchemaGenerator} />
+          <Route path="/domain-age" component={DomainAgeChecker} />
+          <Route path="/domain-authority" component={DomainAuthorityChecker} />
+          <Route path="/plagiarism" component={PlagiarismChecker} />
+          <Route path="/readability" component={ReadabilityChecker} />
+          <Route path="/keyword-density" component={KeywordDensityChecker} />
+          <Route path="/font-generator" component={FontGenerator} />
+          <Route path="/image-compressor" component={ImageCompressor} />
+          <Route path="/transliterate" component={Transliterate} />
+          <Route path="/diff-checker" component={DiffChecker} />
+          <Route path="/api-tester" component={ApiTester} />
+          <Route path="/youtube-downloader" component={YoutubeDownloader} />
+          <Route path="/qr-code-generator" component={QRCodeGenerator} />
+          <Route path="/regex-tester" component={RegexTester} />
           
           {/* Premium features - requires authentication */}
-          <LazyProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
-          <LazyProtectedRoute path="/content-gap-analyzer" component={ContentGapAnalyzer} />
-          <LazyProtectedRoute path="/history" component={AnalysisHistory} />
+          <ProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
+          <ProtectedRoute path="/content-gap-analyzer" component={ContentGapAnalyzer} />
+          <ProtectedRoute path="/history" component={AnalysisHistory} />
           
           {/* PDF Tools routes */}
-          <LazyRoute path="/pdf-tools" component={PdfToolsHome} />
-          <LazyRoute path="/pdf-tools/compress" component={CompressPdf} />
-          <LazyRoute path="/pdf-tools/pdf-to-word" component={PdfToWord} />
-          <LazyRoute path="/pdf-tools/pdf-to-image" component={PdfToImage} />
-          <LazyRoute path="/pdf-tools/word-to-pdf" component={WordToPdf} />
-          <LazyRoute path="/pdf-tools/extract-text" component={ExtractText} />
-          <LazyRoute path="/pdf-tools/extract-images" component={ExtractImages} />
-          <LazyRoute path="/pdf-tools/merge" component={MergePdf} />
-          <LazyRoute path="/pdf-tools/split" component={SplitPdf} />
-          <LazyRoute path="/pdf-tools/reorder" component={ReorderPdf} />
-          <LazyRoute path="/pdf-tools/rotate" component={RotatePdf} />
-          <LazyRoute path="/pdf-tools/protect" component={ProtectPdf} />
-          <LazyRoute path="/pdf-tools/unlock" component={UnlockPdf} />
-          <LazyRoute path="/pdf-tools/watermark" component={WatermarkPdf} />
-          <LazyRoute path="/pdf-tools/metadata" component={EditMetadata} />
-          <LazyRoute path="/pdf-tools/remove-pages" component={RemovePages} />
+          <Route path="/pdf-tools" component={PdfToolsHome} />
+          <Route path="/pdf-tools/compress" component={CompressPdf} />
+          <Route path="/pdf-tools/pdf-to-word" component={PdfToWord} />
+          <Route path="/pdf-tools/pdf-to-image" component={PdfToImage} />
+          <Route path="/pdf-tools/word-to-pdf" component={WordToPdf} />
+          <Route path="/pdf-tools/extract-text" component={ExtractText} />
+          <Route path="/pdf-tools/extract-images" component={ExtractImages} />
+          <Route path="/pdf-tools/merge" component={MergePdf} />
+          <Route path="/pdf-tools/split" component={SplitPdf} />
+          <Route path="/pdf-tools/reorder" component={ReorderPdf} />
+          <Route path="/pdf-tools/rotate" component={RotatePdf} />
+          <Route path="/pdf-tools/protect" component={ProtectPdf} />
+          <Route path="/pdf-tools/unlock" component={UnlockPdf} />
+          <Route path="/pdf-tools/watermark" component={WatermarkPdf} />
+          <Route path="/pdf-tools/metadata" component={EditMetadata} />
+          <Route path="/pdf-tools/remove-pages" component={RemovePages} />
           
           {/* Calculator routes */}
-          <LazyRoute path="/calculators" component={CalculatorsHome} />
-          <LazyRoute path="/calculators/percentage" component={PercentageCalculator} />
-          <LazyRoute path="/calculators/emi" component={EMICalculator} />
-          <LazyRoute path="/calculators/gst" component={GSTCalculator} />
-          <LazyRoute path="/calculators/unit-converter" component={UnitConverter} />
-          <LazyRoute path="/calculators/sip" component={SIPCalculator} />
-          <LazyRoute path="/calculators/retirement" component={RetirementCalculator} />
-          <LazyRoute path="/calculators/investment" component={InvestmentCalculator} />
-          <LazyRoute path="/calculators/income-tax" component={IncomeTaxCalculator} />
+          <Route path="/calculators" component={CalculatorsHome} />
+          <Route path="/calculators/percentage" component={PercentageCalculator} />
+          <Route path="/calculators/emi" component={EMICalculator} />
+          <Route path="/calculators/gst" component={GSTCalculator} />
+          <Route path="/calculators/unit-converter" component={UnitConverter} />
+          <Route path="/calculators/sip" component={SIPCalculator} />
+          <Route path="/calculators/retirement" component={RetirementCalculator} />
+          <Route path="/calculators/investment" component={InvestmentCalculator} />
+          <Route path="/calculators/income-tax" component={IncomeTaxCalculator} />
           
           {/* Other routes */}
-          <LazyRoute path="/about" component={About} />
-          <LazyRoute path="/features" component={Features} />
-          <LazyRoute path="/login" component={Login} />
-          <LazyRoute path="/signup" component={Signup} />
-          <LazyRoute path="/auth" component={AuthPage} />
+          <Route path="/about" component={About} />
+          <Route path="/features" component={Features} />
+          <Route path="/login" component={Login} />
+          <Route path="/signup" component={Signup} />
+          <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
