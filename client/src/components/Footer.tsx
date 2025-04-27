@@ -1,4 +1,3 @@
-import { Link } from "wouter";
 import { Twitter, Linkedin, Github, Mail, MessageSquare, Phone, MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +31,9 @@ export function Footer() {
         <div className="xl:grid xl:grid-cols-4 xl:gap-8">
           {/* Brand section */}
           <div className="space-y-4">
-            <Link href="/">
+            <a href="/">
               <span className="text-2xl font-bold text-primary cursor-pointer">SEO Analyzer</span>
-            </Link>
+            </a>
             <p className="text-sm text-muted-foreground">
               Advanced SEO analysis and recommendations to improve your website's visibility and ranking.
             </p>
@@ -57,29 +56,29 @@ export function Footer() {
               <h3 className="text-sm font-semibold">Features</h3>
               <ul className="mt-4 space-y-3">
                 <li>
-                  <Link href="/features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     SEO Analysis
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/plagiarism" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/plagiarism" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Plagiarism Checker
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Content Analysis
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/schema" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/schema" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Schema Generator
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/domain-age" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/domain-age" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Domain Age Checker
-                  </Link>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -87,29 +86,29 @@ export function Footer() {
               <h3 className="text-sm font-semibold">Company</h3>
               <ul className="mt-4 space-y-3">
                 <li>
-                  <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     About Us
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Blog
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Careers
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Privacy Policy
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Terms of Service
-                  </Link>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -147,18 +146,18 @@ export function Footer() {
               © {new Date().getFullYear()} SEO Analyzer. All rights reserved.
             </p>
             <div className="flex space-x-6">
-              <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Privacy
-              </Link>
-              <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Terms
-              </Link>
-              <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Cookies
-              </Link>
-              <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Sitemap
-              </Link>
+              </a>
             </div>
           </div>
         </div>

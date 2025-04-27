@@ -321,7 +321,7 @@ export function Navbar() {
             <div className="ml-10 flex items-baseline space-x-4">
               {/* Main navigation items */}
               {mainNavigation.map((item) => (
-                <Link
+                <a
                   key={item.name}
                   href={item.href}
                   className={cn(
@@ -333,7 +333,7 @@ export function Navbar() {
                   )}
                 >
                   {item.name}
-                </Link>
+                </a>
               ))}
 
               {/* SEO Tools Dropdown */}
@@ -357,7 +357,7 @@ export function Navbar() {
                 <DropdownMenuContent align="end" className="w-56">
                   {toolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
-                      <Link
+                      <a
                         href={item.href}
                         className={cn(
                           "flex w-full items-center px-2 py-2 rounded-md text-sm",
@@ -371,7 +371,7 @@ export function Navbar() {
                             Premium
                           </span>
                         )}
-                      </Link>
+                      </a>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -398,7 +398,7 @@ export function Navbar() {
                 <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
                   {calculatorsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
-                      <Link
+                      <a
                         href={item.href}
                         className={cn(
                           "flex w-full items-center px-2 py-2 rounded-md text-sm",
@@ -407,7 +407,7 @@ export function Navbar() {
                       >
                         {item.icon}
                         {item.name}
-                      </Link>
+                      </a>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -434,7 +434,7 @@ export function Navbar() {
                 <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
                   {pdfToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
-                      <Link
+                      <a
                         href={item.href}
                         className={cn(
                           "flex w-full items-center px-2 py-2 rounded-md text-sm",
@@ -443,7 +443,7 @@ export function Navbar() {
                       >
                         {item.icon}
                         {item.name}
-                      </Link>
+                      </a>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -470,7 +470,7 @@ export function Navbar() {
                 <DropdownMenuContent align="end" className="w-56">
                   {otherToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
-                      <Link
+                      <a
                         href={item.href}
                         className={cn(
                           "flex w-full items-center px-2 py-2 rounded-md text-sm",
@@ -479,7 +479,7 @@ export function Navbar() {
                       >
                         {item.icon}
                         {item.name}
-                      </Link>
+                      </a>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -504,10 +504,10 @@ export function Navbar() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href="/history" className="cursor-pointer">
+                        <a href="/history" className="cursor-pointer">
                           <History className="mr-2 h-4 w-4" />
                           Analysis History
-                        </Link>
+                        </a>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => logoutMutation.mutate()}
@@ -530,12 +530,12 @@ export function Navbar() {
                   </DropdownMenu>
                 ) : (
                   <div className="flex space-x-2">
-                    <Link href="/login">
+                    <a href="/login">
                       <Button variant="ghost">Login</Button>
-                    </Link>
-                    <Link href="/signup">
+                    </a>
+                    <a href="/signup">
                       <Button variant="default">Sign Up</Button>
-                    </Link>
+                    </a>
                   </div>
                 )}
               </div>
@@ -567,7 +567,7 @@ export function Navbar() {
                 <div className="flex-grow overflow-y-auto p-6 pt-2">
                   <div className="space-y-1">
                     {allNavigation.map((item) => (
-                      <Link
+                      <a
                         key={item.name}
                         href={item.href}
                         className={cn(
@@ -585,70 +585,64 @@ export function Navbar() {
                             Premium
                           </span>
                         )}
-                      </Link>
+                      </a>
                     ))}
-                  
-                    {/* Authentication in mobile menu */}
-                    <div className="border-t pt-4 mt-4">
-                      {isLoading ? (
-                        <div className="px-3 py-3 flex items-center">
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span>Loading...</span>
-                        </div>
-                      ) : user ? (
-                        <>
-                          <div className="px-3 py-3 flex items-center text-primary font-medium">
-                            <User className="mr-2 h-4 w-4" />
-                            <span>{user.displayName || user.username}</span>
-                          </div>
-                          <Link 
-                            href="/history" 
-                            className="flex items-center px-3 py-3 rounded-md text-base font-medium hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-                          >
-                            <History className="mr-2 h-4 w-4" />
-                            Analysis History
-                          </Link>
-                          <Button
-                            onClick={() => logoutMutation.mutate()}
-                            disabled={logoutMutation.isPending}
-                            variant="ghost"
-                            className="w-full justify-start px-3 py-3 rounded-md text-base font-medium"
-                          >
-                            {logoutMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Logging out...
-                              </>
-                            ) : (
-                              <>
-                                <LogOut className="mr-2 h-4 w-4" />
-                                Logout
-                              </>
-                            )}
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Link href="/login" className="block">
-                            <Button 
-                              variant="ghost" 
-                              className="w-full justify-start px-3 py-3 rounded-md text-base font-medium"
-                            >
-                              Login
-                            </Button>
-                          </Link>
-                          <Link href="/signup" className="block mt-2">
-                            <Button 
-                              variant="default" 
-                              className="w-full justify-start px-3 py-3 rounded-md text-base font-medium"
-                            >
-                              Sign Up
-                            </Button>
-                          </Link>
-                        </>
-                      )}
-                    </div>
                   </div>
+                </div>
+                <div className="p-6 pt-2 border-t">
+                  {isLoading ? (
+                    <Button disabled variant="ghost" className="w-full justify-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </Button>
+                  ) : user ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Signed in as{" "}
+                        <span className="font-medium text-foreground">
+                          {user.displayName || user.username}
+                        </span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <a href="/history" className="block">
+                          <Button variant="outline" className="w-full">
+                            <History className="mr-2 h-4 w-4" />
+                            History
+                          </Button>
+                        </a>
+                        <Button
+                          variant="destructive"
+                          onClick={() => logoutMutation.mutate()}
+                          disabled={logoutMutation.isPending}
+                          className="w-full"
+                        >
+                          {logoutMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <LogOut className="mr-2 h-4 w-4" />
+                              Logout
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <a href="/login" className="block">
+                        <Button variant="outline" className="w-full">
+                          <User className="mr-2 h-4 w-4" />
+                          Login
+                        </Button>
+                      </a>
+                      <a href="/signup" className="block mt-2">
+                        <Button variant="default" className="w-full">
+                          <User className="mr-2 h-4 w-4" />
+                          Sign Up
+                        </Button>
+                      </a>
+                    </div>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
