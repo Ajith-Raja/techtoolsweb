@@ -1,8 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, DollarSign, Percent, TrendingUp, ArrowLeftRight, PiggyBank, BarChart3, Receipt } from "lucide-react";
-import { Link } from "wouter";
+import React from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Percent, CreditCard, BarChart4, ArrowUpDown, PiggyBank, Clock, Timer, Calendar, Cake } from "lucide-react";
 
-interface CalculatorCard {
+interface CalculatorItem {
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -10,86 +10,114 @@ interface CalculatorCard {
 }
 
 export default function CalculatorsHome() {
-  const calculatorCards: CalculatorCard[] = [
+  const calculators: CalculatorItem[] = [
     {
       title: "Percentage Calculator",
-      description: "Calculate discounts, tips, percentage increases and decreases",
-      icon: <Percent className="h-8 w-8 text-primary" />,
-      href: "/calculators/percentage",
+      description: "Calculate percentages, increases, decreases, and more",
+      icon: <Percent className="h-6 w-6" />,
+      href: "/calculators/percentage"
     },
     {
       title: "EMI Calculator",
-      description: "Calculate monthly loan installments based on principal, interest rate and tenure",
-      icon: <DollarSign className="h-8 w-8 text-primary" />,
-      href: "/calculators/emi",
+      description: "Calculate loan EMI, total interest, and payment schedule",
+      icon: <CreditCard className="h-6 w-6" />,
+      href: "/calculators/emi"
     },
     {
       title: "GST Calculator",
-      description: "Calculate GST amount and final price for goods and services",
-      icon: <Calculator className="h-8 w-8 text-primary" />,
-      href: "/calculators/gst",
+      description: "Calculate GST inclusive and exclusive amounts",
+      icon: <BarChart4 className="h-6 w-6" />,
+      href: "/calculators/gst"
     },
-
     {
       title: "Unit Converter",
-      description: "Convert between different units of measurement",
-      icon: <ArrowLeftRight className="h-8 w-8 text-primary" />,
-      href: "/calculators/unit-converter",
+      description: "Convert between various units of measurement",
+      icon: <ArrowUpDown className="h-6 w-6" />,
+      href: "/calculators/unit-converter"
     },
     {
       title: "SIP Calculator",
       description: "Calculate returns on systematic investment plans",
-      icon: <TrendingUp className="h-8 w-8 text-primary" />,
-      href: "/calculators/sip",
+      icon: <PiggyBank className="h-6 w-6" />,
+      href: "/calculators/sip"
     },
     {
-      title: "Retirement Planning Calculator",
-      description: "Plan your retirement savings and estimate future value",
-      icon: <PiggyBank className="h-8 w-8 text-primary" />,
-      href: "/calculators/retirement",
+      title: "Retirement Calculator",
+      description: "Plan your retirement savings and corpus",
+      icon: <PiggyBank className="h-6 w-6" />,
+      href: "/calculators/retirement"
     },
     {
       title: "Investment Calculator",
-      description: "Calculate future value of lump sum investments",
-      icon: <BarChart3 className="h-8 w-8 text-primary" />,
-      href: "/calculators/investment",
+      description: "Calculate investment growth and returns",
+      icon: <PiggyBank className="h-6 w-6" />,
+      href: "/calculators/investment"
     },
     {
       title: "Income Tax Calculator",
-      description: "Estimate your income tax liability based on income and deductions",
-      icon: <Receipt className="h-8 w-8 text-primary" />,
-      href: "/calculators/income-tax",
+      description: "Calculate income tax liability based on different slabs",
+      icon: <BarChart4 className="h-6 w-6" />,
+      href: "/calculators/income-tax"
     },
+    {
+      title: "Timezone Converter",
+      description: "Convert times between different timezones",
+      icon: <Clock className="h-6 w-6" />,
+      href: "/calculators/timezone-converter"
+    },
+    {
+      title: "Unix Timestamp Converter",
+      description: "Convert between Unix timestamps and human-readable dates",
+      icon: <Timer className="h-6 w-6" />,
+      href: "/calculators/unix-timestamp-converter"
+    },
+    {
+      title: "Birthday Calculator",
+      description: "Calculate exact age in years, months, days, hours, minutes and seconds",
+      icon: <Cake className="h-6 w-6" />,
+      href: "/calculators/birthday-calculator"
+    }
   ];
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">Financial Calculators</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          A collection of useful calculators to help with financial planning, conversions, and everyday calculations.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {calculatorCards.map((card) => (
-          <Link key={card.href} href={card.href}>
-            <Card className="h-full cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-primary/10 rounded-full">{card.icon}</div>
-                </div>
-                <CardTitle>{card.title}</CardTitle>
-                <CardDescription>{card.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-end">
-                  <span className="text-xs text-primary font-medium">Use Calculator →</span>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+    <div className="container py-10">
+      <div className="space-y-6">
+        <div className="text-center max-w-3xl mx-auto mb-10">
+          <h1 className="text-3xl font-bold tracking-tight mb-3">Financial & Utility Calculators</h1>
+          <p className="text-muted-foreground">
+            A collection of useful calculators for financial planning, unit conversion, and more.
+            All calculations are performed directly in your browser with no data sent to our servers.
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {calculators.map((calculator, index) => (
+            <a 
+              key={index} 
+              href={calculator.href}
+              className="block group"
+            >
+              <Card className="h-full border shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                <CardHeader className="bg-primary/5 group-hover:bg-primary/10 transition-colors">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      {calculator.icon}
+                    </div>
+                    <CardTitle className="text-xl">{calculator.title}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <CardDescription className="text-sm line-clamp-2">
+                    {calculator.description}
+                  </CardDescription>
+                </CardContent>
+                <CardFooter className="text-xs text-right text-muted-foreground">
+                  Click to open calculator
+                </CardFooter>
+              </Card>
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   );

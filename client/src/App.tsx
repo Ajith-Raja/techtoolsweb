@@ -55,6 +55,8 @@ const WordToPdf = lazy(() => import("./pages/pdf-tools/WordToPdf"));
 const YoutubeDownloader = lazy(() => import("./pages/YoutubeDownloader"));
 const QRCodeGenerator = lazy(() => import("./pages/QRCodeGenerator"));
 const RegexTester = lazy(() => import("./pages/RegexTester"));
+const ImageToSvgConverter = lazy(() => import("./pages/ImageToSvgConverter"));
+const CalendarGenerator = lazy(() => import("./pages/CalendarGenerator"));
 
 // Calculator pages
 const CalculatorsHome = lazy(() => import("./pages/calculators/CalculatorsHome"));
@@ -66,6 +68,9 @@ const SIPCalculator = lazy(() => import("./pages/calculators/SIPCalculator"));
 const RetirementCalculator = lazy(() => import("./pages/calculators/RetirementCalculator"));
 const InvestmentCalculator = lazy(() => import("./pages/calculators/InvestmentCalculator"));
 const IncomeTaxCalculator = lazy(() => import("./pages/calculators/IncomeTaxCalculator"));
+const TimezoneConverter = lazy(() => import("./pages/calculators/TimezoneConverter"));
+const UnixTimestampConverter = lazy(() => import("./pages/calculators/UnixTimestampConverter"));
+const BirthdayCalculator = lazy(() => import("./pages/calculators/BirthdayCalculator"));
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -139,6 +144,8 @@ function Router() {
           <LazyRoute path="/youtube-downloader" component={YoutubeDownloader} />
           <LazyRoute path="/qr-code-generator" component={QRCodeGenerator} />
           <LazyRoute path="/regex-tester" component={RegexTester} />
+          <LazyRoute path="/image-to-svg" component={ImageToSvgConverter} />
+          <LazyRoute path="/calendar-generator" component={CalendarGenerator} />
           
           {/* Premium features - requires authentication */}
           <LazyProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
@@ -173,6 +180,9 @@ function Router() {
           <LazyRoute path="/calculators/retirement" component={RetirementCalculator} />
           <LazyRoute path="/calculators/investment" component={InvestmentCalculator} />
           <LazyRoute path="/calculators/income-tax" component={IncomeTaxCalculator} />
+          <LazyRoute path="/calculators/timezone-converter" component={TimezoneConverter} />
+          <LazyRoute path="/calculators/unix-timestamp-converter" component={UnixTimestampConverter} />
+          <LazyRoute path="/calculators/birthday-calculator" component={BirthdayCalculator} />
           
           {/* Other routes */}
           <LazyRoute path="/about" component={About} />

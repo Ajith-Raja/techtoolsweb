@@ -41,6 +41,11 @@ import {
   QrCode,
   Receipt,
   PiggyBank,
+  Clock,
+  Timer,
+  Cake,
+  Calendar,
+  FileImage,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +57,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
@@ -146,7 +151,6 @@ export function Navbar() {
       href: "/calculators/gst",
       icon: <Calculator className="mr-2 h-4 w-4" />,
     },
-
     {
       name: "Unit Converter",
       href: "/calculators/unit-converter",
@@ -171,6 +175,21 @@ export function Navbar() {
       name: "Income Tax Calculator",
       href: "/calculators/income-tax",
       icon: <Receipt className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Timezone Converter",
+      href: "/calculators/timezone-converter",
+      icon: <Clock className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Unix Timestamp Converter",
+      href: "/calculators/unix-timestamp-converter",
+      icon: <Timer className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Birthday Calculator",
+      href: "/calculators/birthday-calculator",
+      icon: <Cake className="mr-2 h-4 w-4" />,
     },
   ];
   
@@ -204,6 +223,16 @@ export function Navbar() {
       name: "Regex Tester",
       href: "/regex-tester",
       icon: <FileText className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Image to SVG Converter",
+      href: "/image-to-svg",
+      icon: <FileImage className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Calendar Generator",
+      href: "/calendar-generator",
+      icon: <Calendar className="mr-2 h-4 w-4" />,
     }
   ];
 
