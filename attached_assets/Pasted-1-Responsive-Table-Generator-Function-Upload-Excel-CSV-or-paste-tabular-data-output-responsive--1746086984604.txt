@@ -1,0 +1,184 @@
+1. Responsive Table Generator
+Function: Upload Excel/CSV or paste tabular data → output responsive, styled, paginated HTML table with export options.
+
+Features:
+Upload Excel/CSV or paste data
+
+Auto-detect headers and rows
+
+Output responsive HTML + JavaScript (DataTables or Tabulator)
+
+Options: Pagination, Search, Sort, Copy, Export to CSV/Excel/PDF
+
+Copy/paste embed code
+
+Inputs:
+CSV file, Excel file, or pasted table data
+
+Outputs:
+HTML + JS + CSS table block (downloadable or copyable)
+
+Tech Stack:
+Frontend: React/Vanilla JS, Tabulator or DataTables
+
+Backend: Python (FastAPI) or Node.js (optional for processing Excel)
+
+Libraries: pandas, xlsx, tabulator-tables, papaparse.js
+
+2. No-Code Sitemap Visualizer
+Function: Enter a domain → crawl the site → generate a visual, tree-style sitemap + export options
+
+Features:
+URL crawler (depth-limited)
+
+Generate visual sitemap (tree or radial)
+
+Export as XML, JSON, or PNG/SVG
+
+Comment or tag nodes
+
+Public/private sharing
+
+Inputs:
+Website URL
+
+Outputs:
+Visual sitemap
+
+Downloadable sitemap file
+
+Tech Stack:
+Frontend: React + D3.js or Cytoscape.js
+
+Backend: Python (FastAPI), requests, BeautifulSoup, networkx
+
+Optional: Redis queue for large sites
+
+3. Webhook Simulator with History
+Function: Simulate sending a webhook payload to a URL; log the full request and response.
+
+Features:
+Select common services (Stripe, GitHub, Twilio, etc.) or custom JSON
+
+Send to user-supplied URL
+
+Logs: Request headers, body, response, timestamp
+
+Replay, modify, and resend payload
+
+Save test templates
+
+Inputs:
+Target URL, JSON payload
+
+Outputs:
+Request/response logs with timestamps
+
+Tech Stack:
+Frontend: React + Monaco Editor (for JSON input)
+
+Backend: Node.js or FastAPI
+
+DB: SQLite/PostgreSQL (for logs)
+
+Optional auth: JWT sessions for saving history
+
+4. JWT Decoder
+Function: Paste a JWT → decode it into header, payload, signature → show as formatted JSON.
+
+Features:
+Secure in-browser decoding (no server processing)
+
+Highlight token parts (color-coded)
+
+Detect expiration or invalid format
+
+Optional HMAC/RS256 signature verification (optional key entry)
+
+Inputs:
+JWT string
+
+(Optional) Secret or public key for verification
+
+Outputs:
+Header, Payload, Signature (decoded)
+
+Tech Stack:
+Frontend-only: JavaScript (with jwt-decode or custom base64 parser)
+
+Secure: Runs completely on client-side
+
+5. Hash Generator
+Function: Generate cryptographic hashes (MD5, SHA1, SHA256, etc.)
+
+Features:
+Paste or upload text/file
+
+Choose hash algorithm
+
+Show hex and base64 output
+
+Copy to clipboard
+
+Inputs:
+Text or file, algorithm choice
+
+Outputs:
+Hash value (hex and/or base64)
+
+Tech Stack:
+Frontend: React or Vanilla JS
+
+Backend (optional for large files): Node.js or Python with hashlib
+
+In-browser hashing: use SubtleCrypto API
+
+6. Password Strength Tester / Entropy Checker
+Function: Analyze password strength and entropy, show live feedback.
+
+Features:
+Real-time strength bar
+
+Calculate entropy (bits)
+
+Highlight weaknesses (e.g., dictionary words, patterns)
+
+Suggestions for improvement
+
+Inputs:
+Password text
+
+Outputs:
+Strength rating (e.g., weak/strong), entropy in bits, feedback
+
+Tech Stack:
+Frontend: React + zxcvbn.js or custom entropy logic
+
+Optional backend: Logging anonymous passwords for analytics (careful with privacy)
+
+7. Cron Time Generator and Checker (CronCron)
+Function: Generate and test cron expressions visually.
+
+Features:
+UI to build cron expression (dropdowns/sliders)
+
+Show upcoming trigger times
+
+Validate syntax
+
+Reverse: paste cron → explain in human-readable form
+
+Timezone support
+
+Inputs:
+Cron expression or visual inputs
+
+Outputs:
+Explanation + next 5 execution times
+
+Tech Stack:
+Frontend: React + cron-parser
+
+Backend: Optional for advanced timezone conversions
+
+Libraries: cron-parser, cronstrue, luxon

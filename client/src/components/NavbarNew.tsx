@@ -45,6 +45,14 @@ import {
   Calendar,
   FileImage,
   Timer,
+  Table,
+  Map,
+  Webhook,
+  KeyIcon,
+  Hash,
+  ShieldCheck,
+  Terminal,
+  Code,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -235,6 +243,44 @@ export function Navbar() {
     }
   ];
 
+  const developerToolsNavigation: NavItem[] = [
+    {
+      name: "Responsive Table Generator",
+      href: "/dev-tools/table-generator",
+      icon: <Table className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Sitemap Visualizer",
+      href: "/dev-tools/sitemap-visualizer",
+      icon: <Map className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Webhook Simulator",
+      href: "/dev-tools/webhook-simulator",
+      icon: <Webhook className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "JWT Decoder",
+      href: "/dev-tools/jwt-decoder",
+      icon: <KeyIcon className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Hash Generator",
+      href: "/dev-tools/hash-generator",
+      icon: <Hash className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Password Strength Tester",
+      href: "/dev-tools/password-strength",
+      icon: <ShieldCheck className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Cron Time Generator",
+      href: "/dev-tools/cron-generator",
+      icon: <Terminal className="mr-2 h-4 w-4" />,
+    },
+  ];
+  
   const pdfToolsNavigation: NavItem[] = [
     {
       name: "Compress PDF",
@@ -319,7 +365,8 @@ export function Navbar() {
     ...toolsNavigation,
     ...calculatorsNavigation,
     ...otherToolsNavigation,
-    ...pdfToolsNavigation
+    ...pdfToolsNavigation,
+    ...developerToolsNavigation
   ];
 
   const isActive = (path: string) => location === path;
@@ -331,6 +378,8 @@ export function Navbar() {
     calculatorsNavigation.some((item) => location === item.href);
   const isOtherToolActive = () =>
     otherToolsNavigation.some((item) => location === item.href);
+  const isDeveloperToolActive = () =>
+    developerToolsNavigation.some((item) => location === item.href);
 
   return (
     <nav className="bg-background border-b sticky top-0 z-50">
@@ -497,6 +546,42 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {otherToolsNavigation.map((item) => (
+                    <DropdownMenuItem key={item.name} asChild>
+                      <a
+                        href={item.href}
+                        className={cn(
+                          "flex w-full items-center px-2 py-2 rounded-md text-sm",
+                          isActive(item.href) && "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {item.icon}
+                        {item.name}
+                      </a>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Developer Tools Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "px-3 py-2 rounded-md text-sm font-medium flex items-center",
+                      isDeveloperToolActive()
+                        ? "bg-primary/10 text-primary"
+                        : "text-foreground hover:bg-accent hover:text-accent-foreground",
+                      "transition-colors duration-200",
+                    )}
+                  >
+                    <Code className="mr-2 h-4 w-4" />
+                    Developer Tools
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {developerToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <a
                         href={item.href}
