@@ -385,7 +385,7 @@ export default function CsvToJsonConverter() {
                 <strong>Data Types:</strong> The converter attempts to automatically detect numbers and booleans.
               </li>
               <li>
-                <strong>Large Files:</strong> For very large CSV files (>10MB), consider splitting them or using a more specialized tool.
+                <strong>Large Files:</strong> For very large CSV files (greater than 10MB), consider splitting them or using a more specialized tool.
               </li>
             </ul>
           </div>

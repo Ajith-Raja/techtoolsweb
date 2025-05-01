@@ -180,10 +180,12 @@ export default function XmlToJsonConverter() {
     // Element node
     if (xml.nodeType === 1) {
       // Add attributes if not ignored
-      if (!ignoreAttributes && xml.attributes && xml.attributes.length > 0) {
+      // Type assertion to Element since we've verified nodeType === 1
+      const elem = xml as Element;
+      if (!ignoreAttributes && elem.attributes && elem.attributes.length > 0) {
         obj["@attributes"] = {};
-        for (let i = 0; i < xml.attributes.length; i++) {
-          const attr = xml.attributes.item(i);
+        for (let i = 0; i < elem.attributes.length; i++) {
+          const attr = elem.attributes.item(i);
           if (attr) {
             obj["@attributes"][attr.nodeName] = attr.nodeValue;
           }
@@ -609,7 +611,7 @@ export default function XmlToJsonConverter() {
                 <strong>Special Characters:</strong> Special characters in XML will be preserved in the JSON output.
               </li>
               <li>
-                <strong>Large Files:</strong> For very large XML files (>5MB), consider using a more specialized tool or server-side processing.
+                <strong>Large Files:</strong> For very large XML files (greater than 5MB), consider using a more specialized tool or server-side processing.
               </li>
             </ul>
           </div>
