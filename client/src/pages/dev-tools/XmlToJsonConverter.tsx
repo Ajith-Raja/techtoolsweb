@@ -592,7 +592,7 @@ export default function XmlToJsonConverter() {
             <h3 className="text-lg font-medium">Conversion Options</h3>
             <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
               <li>
-                <strong>Ignore XML Attributes:</strong> When enabled, XML attributes like <code>&lt;tag attribute="value"&gt;</code> will be ignored in the output.
+                <strong>Ignore XML Attributes:</strong> When enabled, XML attributes like <code>&lt;tag attribute="value"/&gt;</code> will be ignored in the output.
               </li>
               <li>
                 <strong>Compact Mode:</strong> Creates a more concise JSON structure. Elements with simple text content will be represented as key-value pairs instead of nested objects.
