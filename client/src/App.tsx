@@ -75,6 +75,11 @@ const BirthdayCalculator = lazy(() => import("./pages/calculators/BirthdayCalcul
 // Developer Tools pages
 const ResponsiveTableGenerator = lazy(() => import("./pages/dev-tools/ResponsiveTableGenerator"));
 const JwtDecoder = lazy(() => import("./pages/dev-tools/JwtDecoder"));
+const SitemapVisualizer = lazy(() => import("./pages/dev-tools/SitemapVisualizer"));
+const WebhookSimulator = lazy(() => import("./pages/dev-tools/WebhookSimulator"));
+const HashGenerator = lazy(() => import("./pages/dev-tools/HashGenerator"));
+const PasswordStrengthTester = lazy(() => import("./pages/dev-tools/PasswordStrengthTester"));
+const CronGenerator = lazy(() => import("./pages/dev-tools/CronGenerator"));
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -191,6 +196,11 @@ function Router() {
           {/* Developer Tools routes */}
           <LazyRoute path="/dev-tools/table-generator" component={ResponsiveTableGenerator} />
           <LazyRoute path="/dev-tools/jwt-decoder" component={JwtDecoder} />
+          <LazyRoute path="/dev-tools/sitemap-visualizer" component={SitemapVisualizer} />
+          <LazyRoute path="/dev-tools/webhook-simulator" component={WebhookSimulator} />
+          <LazyRoute path="/dev-tools/hash-generator" component={HashGenerator} />
+          <LazyRoute path="/dev-tools/password-strength" component={PasswordStrengthTester} />
+          <LazyRoute path="/dev-tools/cron-generator" component={CronGenerator} />
           
           {/* Other routes */}
           <LazyRoute path="/about" component={About} />
