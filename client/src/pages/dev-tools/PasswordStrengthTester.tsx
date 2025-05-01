@@ -202,13 +202,69 @@ export default function PasswordStrengthTester() {
         </CardContent>
       </Card>
 
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Coming Soon</AlertTitle>
-        <AlertDescription>
-          The Password Strength Tester is currently under development. The current implementation is basic - a more advanced version using the zxcvbn algorithm will be available soon.
-        </AlertDescription>
-      </Alert>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Password Security Tips</CardTitle>
+          <CardDescription>
+            Follow these guidelines to create stronger passwords
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="border rounded-md p-4">
+              <h3 className="font-semibold mb-2">Do's</h3>
+              <ul className="space-y-2">
+                <li className="text-sm flex">
+                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Use a minimum of 12 characters for important accounts</span>
+                </li>
+                <li className="text-sm flex">
+                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Combine uppercase letters, lowercase letters, numbers, and special characters</span>
+                </li>
+                <li className="text-sm flex">
+                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Use different passwords for different accounts</span>
+                </li>
+                <li className="text-sm flex">
+                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Consider using a password manager to store and generate strong passwords</span>
+                </li>
+                <li className="text-sm flex">
+                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Enable two-factor authentication (2FA) whenever possible</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="border rounded-md p-4">
+              <h3 className="font-semibold mb-2">Don'ts</h3>
+              <ul className="space-y-2">
+                <li className="text-sm flex">
+                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Don't use personal information (name, birthday, etc.)</span>
+                </li>
+                <li className="text-sm flex">
+                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Don't use common words or phrases (password, qwerty, 123456)</span>
+                </li>
+                <li className="text-sm flex">
+                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Don't use the same password across multiple sites</span>
+                </li>
+                <li className="text-sm flex">
+                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Don't store passwords in plain text documents</span>
+                </li>
+                <li className="text-sm flex">
+                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>Don't share your passwords with others</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
