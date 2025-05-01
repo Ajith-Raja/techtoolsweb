@@ -256,7 +256,7 @@ export default function CronGenerator() {
         </CardFooter>
       </Card>
 
-      <Alert variant="warning">
+      <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Coming Soon</AlertTitle>
         <AlertDescription>

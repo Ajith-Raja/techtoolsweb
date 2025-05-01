@@ -51,7 +51,7 @@ export default function SitemapVisualizer() {
         </CardContent>
       </Card>
 
-      <Alert className="bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+      <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Coming Soon</AlertTitle>
         <AlertDescription>
