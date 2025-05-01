@@ -102,6 +102,7 @@ export default function ApiTester() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [isCopiedShareUrl, setIsCopiedShareUrl] = useState(false);
+  const [isLoadingShared, setIsLoadingShared] = useState(false);
   
   // UI state
   const [showHeaders, setShowHeaders] = useState(false);
@@ -111,6 +112,113 @@ export default function ApiTester() {
   
   // Refs for editor
   const bodyEditorRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Load shared request from URL if available
+  useEffect(() => {
+    const loadSharedRequest = async () => {
+      // Parse the URL for share parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const shareId = urlParams.get('share');
+      
+      if (shareId) {
+        try {
+          setIsLoadingShared(true);
+          // Fetch the shared request
+          const response = await fetch(`http://localhost:8000/api/shared/${shareId}`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.request_data) {
+              // Convert the API request format back to our frontend format
+              const apiReq = data.request_data;
+              
+              // Create a new request object with defaults
+              const newRequest: ApiRequestParams = {
+                method: apiReq.method || 'GET',
+                url: apiReq.url || '',
+                headers: [],
+                queryParams: [],
+                bodyType: apiReq.body_type || 'none',
+                auth: apiReq.auth || { type: 'none' }
+              };
+              
+              // Add headers
+              if (apiReq.headers) {
+                Object.entries(apiReq.headers).forEach(([key, value]) => {
+                  newRequest.headers.push({
+                    id: generateId(),
+                    key,
+                    value: value as string,
+                    enabled: true
+                  });
+                });
+              }
+              
+              // Add query params
+              if (apiReq.query_params) {
+                Object.entries(apiReq.query_params).forEach(([key, value]) => {
+                  newRequest.queryParams.push({
+                    id: generateId(),
+                    key,
+                    value: value as string,
+                    enabled: true
+                  });
+                });
+              }
+              
+              // Add body if present
+              if (apiReq.body_type === 'raw') {
+                newRequest.rawBodyFormat = apiReq.raw_body_format || 'json';
+                
+                if (apiReq.body) {
+                  if (typeof apiReq.body === 'object') {
+                    newRequest.body = JSON.stringify(apiReq.body, null, 2);
+                  } else {
+                    newRequest.body = apiReq.body as string;
+                  }
+                }
+              } else if (apiReq.body_type === 'form-data' || apiReq.body_type === 'x-www-form-urlencoded') {
+                newRequest.formData = [];
+                
+                if (apiReq.form_data) {
+                  Object.entries(apiReq.form_data).forEach(([key, value]) => {
+                    newRequest.formData?.push({
+                      id: generateId(),
+                      key,
+                      value: value as string,
+                      enabled: true
+                    });
+                  });
+                }
+              }
+              
+              // Set the request
+              setRequest(newRequest);
+              
+              toast({
+                title: "Shared request loaded",
+                description: "The shared API request has been loaded successfully"
+              });
+            }
+          } else {
+            throw new Error(`Failed to load shared request: ${response.statusText}`);
+          }
+        } catch (error) {
+          console.error('Failed to load shared request:', error);
+          toast({
+            title: "Failed to load shared request",
+            description: error instanceof Error ? error.message : "An unknown error occurred",
+            variant: "destructive"
+          });
+        } finally {
+          setIsLoadingShared(false);
+        }
+      }
+    };
+    
+    loadSharedRequest();
+  }, []);
 
   // Handle method change
   const handleMethodChange = (value: HttpMethod) => {
@@ -313,7 +421,7 @@ export default function ApiTester() {
       
       // Send the request to the share API
       try {
-        const result = await apiRequest("POST", "http://localhost:8000/share", requestData);
+        const result = await apiRequest("POST", "http://localhost:8000/api/share", requestData);
         const shareData = await result.json();
         
         if (shareData.share_id) {

@@ -3,7 +3,7 @@ import { setupAuth } from "./auth";
 import { registerRoutes } from "./routes";
 import { serveStatic, log, setupVite } from "./vite";
 
-const PORT = parseInt(process.env.PORT || '5001', 10);
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 async function main() {
   const app = express();

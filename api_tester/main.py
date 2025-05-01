@@ -24,7 +24,7 @@ app.add_middleware(
 
 # Import and include the share service router
 try:
-    from api_tester.share_service import router as share_router
+    from share_service import router as share_router
     app.include_router(share_router, prefix="/api", tags=["sharing"])
     print("API sharing endpoints enabled")
 except ImportError as e:
