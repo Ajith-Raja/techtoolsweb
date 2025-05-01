@@ -72,6 +72,10 @@ const TimezoneConverter = lazy(() => import("./pages/calculators/TimezoneConvert
 const UnixTimestampConverter = lazy(() => import("./pages/calculators/UnixTimestampConverter"));
 const BirthdayCalculator = lazy(() => import("./pages/calculators/BirthdayCalculator"));
 
+// Developer Tools pages
+const ResponsiveTableGenerator = lazy(() => import("./pages/dev-tools/ResponsiveTableGenerator"));
+const JwtDecoder = lazy(() => import("./pages/dev-tools/JwtDecoder"));
+
 // Loading component for Suspense
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -183,6 +187,10 @@ function Router() {
           <LazyRoute path="/calculators/timezone-converter" component={TimezoneConverter} />
           <LazyRoute path="/calculators/unix-timestamp-converter" component={UnixTimestampConverter} />
           <LazyRoute path="/calculators/birthday-calculator" component={BirthdayCalculator} />
+          
+          {/* Developer Tools routes */}
+          <LazyRoute path="/dev-tools/table-generator" component={ResponsiveTableGenerator} />
+          <LazyRoute path="/dev-tools/jwt-decoder" component={JwtDecoder} />
           
           {/* Other routes */}
           <LazyRoute path="/about" component={About} />
