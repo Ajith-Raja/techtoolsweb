@@ -256,13 +256,147 @@ export default function CronGenerator() {
         </CardFooter>
       </Card>
 
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Coming Soon</AlertTitle>
-        <AlertDescription>
-          The Cron Expression Generator is currently under development. The current implementation is basic - a more advanced version with timezone support and more precise calculations will be available soon.
-        </AlertDescription>
-      </Alert>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Common Cron Examples</CardTitle>
+          <CardDescription>
+            Reference examples for common scheduling patterns
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border rounded-md p-4">
+              <h3 className="font-medium mb-2">Time-Based Patterns</h3>
+              <ul className="space-y-2 text-sm">
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">* * * * *</span>
+                  <span className="col-span-2">Every minute</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 * * * *</span>
+                  <span className="col-span-2">Every hour (at minute 0)</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 0 * * *</span>
+                  <span className="col-span-2">Every day at midnight</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 12 * * *</span>
+                  <span className="col-span-2">Every day at noon</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 0 * * 0</span>
+                  <span className="col-span-2">Every Sunday at midnight</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 0 1 * *</span>
+                  <span className="col-span-2">First day of each month</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="border rounded-md p-4">
+              <h3 className="font-medium mb-2">Interval Patterns</h3>
+              <ul className="space-y-2 text-sm">
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">*/5 * * * *</span>
+                  <span className="col-span-2">Every 5 minutes</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 */2 * * *</span>
+                  <span className="col-span-2">Every 2 hours</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 8-17 * * *</span>
+                  <span className="col-span-2">Every hour from 8 AM to 5 PM</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 0 * * 1-5</span>
+                  <span className="col-span-2">Weekdays at midnight</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 0 */15 * *</span>
+                  <span className="col-span-2">Every 15 days at midnight</span>
+                </li>
+                <li className="grid grid-cols-3 gap-2">
+                  <span className="font-mono">0 0 1,15 * *</span>
+                  <span className="col-span-2">1st and 15th of each month</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Cron Syntax Guide</CardTitle>
+          <CardDescription>
+            Reference for standard cron expression syntax
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Field</th>
+                    <th className="text-left p-2">Allowed Values</th>
+                    <th className="text-left p-2">Special Characters</th>
+                    <th className="text-left p-2">Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b">
+                    <td className="p-2 font-medium">Minute</td>
+                    <td className="p-2">0-59</td>
+                    <td className="p-2">* , - /</td>
+                    <td className="p-2"><code>*/15</code> (every 15 minutes)</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-2 font-medium">Hour</td>
+                    <td className="p-2">0-23</td>
+                    <td className="p-2">* , - /</td>
+                    <td className="p-2"><code>8-17</code> (8 AM to 5 PM)</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-2 font-medium">Day of Month</td>
+                    <td className="p-2">1-31</td>
+                    <td className="p-2">* , - / L W</td>
+                    <td className="p-2"><code>1,15</code> (1st and 15th)</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-2 font-medium">Month</td>
+                    <td className="p-2">1-12</td>
+                    <td className="p-2">* , - /</td>
+                    <td className="p-2"><code>*/3</code> (every 3 months)</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-medium">Day of Week</td>
+                    <td className="p-2">0-6 (0=Sunday)</td>
+                    <td className="p-2">* , - / L #</td>
+                    <td className="p-2"><code>1-5</code> (Monday-Friday)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="bg-muted p-4 rounded-md">
+              <h3 className="font-medium mb-2">Special Characters</h3>
+              <ul className="space-y-2 text-sm">
+                <li><strong>*</strong>: Any value (wildcard)</li>
+                <li><strong>,</strong>: Value list separator (e.g., <code>1,15</code> means 1st and 15th)</li>
+                <li><strong>-</strong>: Range of values (e.g., <code>1-5</code> means 1, 2, 3, 4, and 5)</li>
+                <li><strong>/</strong>: Step values (e.g., <code>*/5</code> means every 5 units)</li>
+                <li><strong>L</strong>: Last day of month or week (e.g., <code>L</code> in day of month means last day of month)</li>
+                <li><strong>W</strong>: Weekday nearest to the given day (e.g., <code>15W</code> means the nearest weekday to the 15th)</li>
+                <li><strong>#</strong>: Nth day of month (e.g., <code>5#3</code> means the 3rd Friday of the month)</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
