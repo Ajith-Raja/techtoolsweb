@@ -80,6 +80,8 @@ const WebhookSimulator = lazy(() => import("./pages/dev-tools/WebhookSimulator")
 const HashGenerator = lazy(() => import("./pages/dev-tools/HashGenerator"));
 const PasswordStrengthTester = lazy(() => import("./pages/dev-tools/PasswordStrengthTester"));
 const CronGenerator = lazy(() => import("./pages/dev-tools/CronGenerator"));
+const CsvToJsonConverter = lazy(() => import("./pages/dev-tools/CsvToJsonConverter"));
+const XmlToJsonConverter = lazy(() => import("./pages/dev-tools/XmlToJsonConverter"));
 
 // Loading component for Suspense
 const PageLoader = () => (
@@ -201,6 +203,8 @@ function Router() {
           <LazyRoute path="/dev-tools/hash-generator" component={HashGenerator} />
           <LazyRoute path="/dev-tools/password-strength" component={PasswordStrengthTester} />
           <LazyRoute path="/dev-tools/cron-generator" component={CronGenerator} />
+          <LazyRoute path="/dev-tools/csv-to-json" component={CsvToJsonConverter} />
+          <LazyRoute path="/dev-tools/xml-to-json" component={XmlToJsonConverter} />
           
           {/* Other routes */}
           <LazyRoute path="/about" component={About} />

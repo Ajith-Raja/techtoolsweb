@@ -53,6 +53,8 @@ import {
   ShieldCheck,
   Terminal,
   Code,
+  FileJson,
+  FileCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -278,6 +280,16 @@ export function Navbar() {
       name: "Cron Time Generator",
       href: "/dev-tools/cron-generator",
       icon: <Terminal className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "CSV to JSON Converter",
+      href: "/dev-tools/csv-to-json",
+      icon: <FileJson className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "XML to JSON Converter",
+      href: "/dev-tools/xml-to-json",
+      icon: <FileCode className="mr-2 h-4 w-4" />,
     },
   ];
   
