@@ -472,13 +472,15 @@ const RegexTester: React.FC = () => {
               <CardDescription>Enter your regular expression pattern</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 select-none text-muted-foreground">/</div>
                 <Input
                   placeholder="Regular expression pattern..."
                   value={pattern}
                   onChange={(e) => setPattern(e.target.value)}
-                  className="font-mono"
+                  className="font-mono pl-6 pr-6"
                 />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 select-none text-muted-foreground">/</div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -674,10 +676,10 @@ const RegexTester: React.FC = () => {
             <div>
               <h3 className="font-semibold mb-2">Anchors & Boundaries</h3>
               <ul className="space-y-1 text-sm">
-                <li><code className="bg-secondary px-1 rounded">^</code> - Start of line</li>
-                <li><code className="bg-secondary px-1 rounded">$</code> - End of line</li>
-                <li><code className="bg-secondary px-1 rounded">\\b</code> - Word boundary</li>
-                <li><code className="bg-secondary px-1 rounded">\\B</code> - Not word boundary</li>
+                <li><code className="bg-secondary px-1 rounded select-none">^</code> - Start of line</li>
+                <li><code className="bg-secondary px-1 rounded select-none">$</code> - End of line</li>
+                <li><code className="bg-secondary px-1 rounded select-none">\\b</code> - Word boundary</li>
+                <li><code className="bg-secondary px-1 rounded select-none">\\B</code> - Not word boundary</li>
               </ul>
               <h3 className="font-semibold mt-4 mb-2">Quantifiers</h3>
               <ul className="space-y-1 text-sm">

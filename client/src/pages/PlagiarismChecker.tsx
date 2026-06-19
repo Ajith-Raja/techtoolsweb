@@ -36,7 +36,7 @@ export default function PlagiarismChecker() {
   
   const plagiarismMutation = useMutation({
     mutationFn: async (data: { text: string; type: "text" | "url" }) => {
-      const res = await apiRequest("POST", "/api/plagiarism-check", data);
+      const res = await apiRequest("POST", "http://localhost:8000/api/plagiarism-check", data);
       return res.json();
     },
     onSuccess: (data: PlagiarismResult) => {

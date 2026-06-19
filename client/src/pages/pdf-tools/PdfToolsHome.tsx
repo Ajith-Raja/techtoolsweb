@@ -14,7 +14,8 @@ import {
   Stamp,
   FileOutput,
   FileInput,
-  Image
+  Image,
+  MessageSquare
 } from 'lucide-react';
 
 interface ToolCardProps {
@@ -140,6 +141,12 @@ export default function PdfToolsHome() {
       description: 'Delete selected pages from a PDF document',
       icon: <ScissorsSquare className="h-5 w-5 text-primary" />,
       href: '/pdf-tools/remove-pages'
+    },
+    {
+      title: 'PDF Chat',
+      description: 'Chat with your PDF documents using AI',
+      icon: <MessageSquare className="h-5 w-5 text-primary" />,
+      href: '/pdf-tools/chat'
     }
   ];
 

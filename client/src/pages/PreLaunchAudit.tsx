@@ -80,6 +80,7 @@ export default function PreLaunchAudit() {
   
   // State for the active tab
   const [activeTab, setActiveTab] = useState('config');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Handle configuration changes
   const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -107,13 +108,49 @@ export default function PreLaunchAudit() {
     });
   };
 
+  const runAudit = async () => {
+    setIsGenerating(true)
+    const response = await fetch('http://localhost:8000/api/prelaunch-audit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(config),
+    });
+
+    try {
+      if (!response.ok) {
+        throw new Error(`Audit failed with status ${response.status}`);
+      }
+
+      const data: AuditResult = await response.json();
+
+      setAuditResult(data);
+      setIsGenerating(false)
+      setActiveTab('results');
+
+      toast({
+        title: 'Audit completed successfully',
+        description: `We found ${data.pagesWithIssues} pages with issues out of ${data.totalPages} pages.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Audit failed',
+        description: 'There was an error running the audit. Please try again.',
+        variant: 'destructive',
+      });
+      console.error(error);
+      setIsGenerating(false)
+    }
+  };
+
   // Use React Query for the audit request
   const auditMutation = useMutation({
     mutationFn: async (auditConfig: AuditConfig) => {
       // In a real implementation, this would call your backend API
       const response = await apiRequest(
         'POST',
-        '/api/pre-launch-audit', 
+        'http://localhost:8000/api/pre-launch-audit', 
         auditConfig
       );
       const data = await response.json();
@@ -445,7 +482,7 @@ export default function PreLaunchAudit() {
                   </div>
                 </div>
                 
-                <div className="grid gap-2 pt-4">
+                {/* <div className="grid gap-2 pt-4">
                   <div className="flex items-center space-x-2">
                     <Switch 
                       id="requiresAuth" 
@@ -457,7 +494,7 @@ export default function PreLaunchAudit() {
                   <p className="text-sm text-gray-500 pl-7">
                     Toggle if the website requires authentication to access
                   </p>
-                </div>
+                </div> */}
                 
                 {config.requiresAuth && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
@@ -720,9 +757,9 @@ export default function PreLaunchAudit() {
           </div>
           <div>
             {activeTab === 'config' && (
-              <Button onClick={() => runMockAudit()} disabled={auditMutation.isPending || !config.url}>
+              <Button onClick={() => runAudit()} disabled={isGenerating || !config.url}>
                 <Search className="mr-2 h-4 w-4" />
-                {auditMutation.isPending ? 'Auditing...' : 'Start Audit'}
+                {isGenerating ? 'Auditing...' : 'Start Audit'}
               </Button>
             )}
           </div>

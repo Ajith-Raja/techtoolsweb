@@ -1,13 +1,16 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { FileText, Download, Settings2 } from 'lucide-react';
+import { FileText, Download, Settings2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PdfFileUpload } from '@/components/PdfFileUpload';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { pdfToWord, usePdfProgress, getDownloadUrl } from '@/lib/pdfService';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function PdfToWord() {
   const [file, setFile] = useState<File | null>(null);
@@ -16,41 +19,77 @@ export default function PdfToWord() {
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  usePdfProgress(taskId, (progressData) => {
+    setProgress(progressData.progress);
+    if (progressData.status === 'completed') {
+      setProcessing(false);
+      setCompleted(true);
+      toast({
+        title: 'Conversion Completed',
+        description: 'Your Word document is ready to download.',
+      });
+    } else if (progressData.status === 'error') {
+      setProcessing(false);
+      setError(progressData.error || 'An error occurred during conversion');
+      toast({
+        title: 'Conversion Failed',
+        description: progressData.error || 'An error occurred during conversion.',
+        variant: 'destructive',
+      });
+    }
+  });
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setError(null);
   };
 
   const resetForm = () => {
     setFile(null);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setError(null);
   };
 
-  const handleConversion = () => {
+  const handleConversion = async () => {
     if (!file) return;
     
     setProcessing(true);
+    setError(null);
     
-    // Simulate conversion progress
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
-      
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        toast({
-          title: 'Conversion Completed',
-          description: 'Your Word document is ready to download.',
-        });
-      }
-    }, 300);
+    try {
+      const newTaskId = await pdfToWord(file);
+      setTaskId(newTaskId);
+    } catch (error) {
+      setProcessing(false);
+      setError((error as Error).message);
+      toast({
+        title: 'Conversion Failed',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownload = () => {
+    debugger;
+    if (taskId) {
+      const downloadUrl = getDownloadUrl(taskId);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${file?.name.replace('.pdf', '')}.${outputFormat}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   return (
@@ -110,6 +149,14 @@ export default function PdfToWord() {
                   </div>
                 </div>
                 
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                
                 {(processing || completed) && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -146,13 +193,23 @@ export default function PdfToWord() {
             )}
             
             {completed && (
-              <Button
-                variant="default"
-                className="w-full sm:w-auto"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Word Document
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={resetForm}
+                >
+                  Convert Another PDF
+                </Button>
+                <Button
+                  variant="default"
+                  className="w-full sm:w-auto"
+                  onClick={handleDownload}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Word Document
+                </Button>
+              </>
             )}
           </CardFooter>
         </Card>

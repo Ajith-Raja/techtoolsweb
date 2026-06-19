@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, Info } from "lucide-react";
+import { ChevronDown, AlertCircle, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -24,8 +24,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { apiRequest } from "@/lib/queryClient";
 
 interface DomainInfo {
   domain: string;
@@ -42,22 +43,77 @@ export default function DomainAgeChecker() {
   const [domains, setDomains] = useState<string>("");
   const [results, setResults] = useState<DomainInfo[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<DomainInfo | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Process the input domains into an array
+  const parseDomains = (input: string): string[] => {
+    return input
+      .split(/[\n,]/)  // Split by newline or comma
+      .map(domain => domain.trim())
+      .filter(domain => domain !== "");  // Remove empty entries
+  };
+
+  // Validate domains for API call
+  const validateDomains = (domainList: string[]): { valid: boolean; message?: string } => {
+    // Check if there are any domains
+    if (domainList.length === 0) {
+      return { valid: false, message: "Please enter at least one domain" };
+    }
+    
+    // Check if there are more than 5 domains
+    if (domainList.length > 5) {
+      return { valid: false, message: "Maximum 5 domains allowed" };
+    }
+    
+    // Validate each domain format (basic validation)
+    const invalidDomains = domainList.filter(domain => {
+      // Simple domain format validation (can be enhanced)
+      return !/^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(domain) && 
+             !/^https?:\/\/([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}/.test(domain);
+    });
+    
+    if (invalidDomains.length > 0) {
+      return { 
+        valid: false, 
+        message: `Invalid domain format: ${invalidDomains.join(", ")}` 
+      };
+    }
+    
+    return { valid: true };
+  };
 
   const handleCheck = async () => {
-    // Mock data for demonstration
-    const mockResults: DomainInfo[] = [
-      {
-        domain: "example.com",
-        age: "1 Years 5 Months 3 Days",
-        createdDate: "2022-05-15",
-        expiryDate: "2024-05-15",
-        lastUpdated: "2023-09-01",
-        registrar: "GoDaddy",
-        ipAddress: "192.168.1.1",
-        nameServers: ["ns1.example.com", "ns2.example.com"]
+    setError(null);
+    
+    // Parse and validate domains
+    const domainList = parseDomains(domains);
+    const validation = validateDomains(domainList);
+    
+    if (!validation.valid) {
+      setError(validation.message || "Invalid domains");
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      debugger;
+      // Call the API
+      const response = await apiRequest("POST", "http://localhost:8000/api/domain-age", { domains: domainList });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to check domain age");
       }
-    ];
-    setResults(mockResults);
+      
+      const data = await response.json();
+      setResults(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+      console.error("Domain age check error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -80,11 +136,26 @@ export default function DomainAgeChecker() {
               onChange={(e) => setDomains(e.target.value)}
               rows={5}
             />
+            {error && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <Button 
               className="w-full mt-4"
               onClick={handleCheck}
+              disabled={isLoading}
             >
-              Check Age
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                "Check Age"
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -97,14 +168,6 @@ export default function DomainAgeChecker() {
                   <TableRow>
                     <TableHead>
                       Domain Name
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-1 p-0 h-4 w-4"
-                        onClick={() => setSelectedDomain(results[0])}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
                     </TableHead>
                     <TableHead>Domain Age</TableHead>
                     <TableHead>Created Date</TableHead>
@@ -114,7 +177,16 @@ export default function DomainAgeChecker() {
                 <TableBody>
                   {results.map((result, index) => (
                     <TableRow key={index}>
-                      <TableCell>{result.domain}</TableCell>
+                      <TableCell>{result.domain}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="ml-1 p-0 h-4 w-4"
+                          onClick={() => setSelectedDomain(result)}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                       <TableCell>{result.age}</TableCell>
                       <TableCell>{result.createdDate}</TableCell>
                       <TableCell>{result.expiryDate}</TableCell>
@@ -145,7 +217,7 @@ export default function DomainAgeChecker() {
                         <div>{selectedDomain.ipAddress}</div>
                         
                         <div className="font-medium">Name Servers:</div>
-                        <div>{selectedDomain.nameServers.join(", ")}</div>
+                        <div>{selectedDomain.nameServers}</div>
                         
                         <div className="font-medium">Domain Age:</div>
                         <div>{selectedDomain.age}</div>

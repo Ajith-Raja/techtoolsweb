@@ -1,0 +1,53 @@
+{
+  "yourDomain": "yourdomain.com",
+  "competitorDomains": [
+    "competitor1.com",
+    "competitor2.com"
+  ],
+  "dateAnalyzed": "2025-05-04T15:10:48.670558",
+  "premium": false,
+  "analysis": {
+    "totalMissingKeywords": 48,
+    "lowDifficultyOpportunities": 0,
+    "highTrafficOpportunities": 23,
+    "topCategories": [
+      {
+        "category": "ai",
+        "name": "ai",
+        "keywordCount": 2,
+        "count": 14
+      },
+      {
+        "category": "prediction",
+        "name": "prediction",
+        "keywordCount": 2,
+        "count": 14
+      },
+      {
+        "category": "provide",
+        "name": "provide",
+        "keywordCount": 2,
+        "count": 14
+      },
+      {
+        "category": "tool",
+        "name": "tool",
+        "keywordCount": 2,
+        "count": 14
+      },
+      {
+        "category": "learning",
+        "name": "learning",
+        "keywordCount": 2,
+        "count": 12
+      }
+    ],
+    "recommendedActions": [
+      {
+        "action": "Create content for missing high-traffic keywords",
+        "priority": "High",
+        "difficulty": "Medium"
+      }
+    ]
+  }
+}

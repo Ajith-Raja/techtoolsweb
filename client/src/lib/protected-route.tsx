@@ -9,7 +9,7 @@ type ProtectedRouteProps = {
 
 export function ProtectedRoute({ path, component: Component }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
-
+debugger;
   return (
     <Route path={path}>
       {isLoading ? (
@@ -20,7 +20,8 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
         <Component />
       ) : (
         <Redirect to="/login" />
-      )}
+      )
+      }
     </Route>
   );
 }

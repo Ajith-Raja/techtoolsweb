@@ -7,7 +7,7 @@ Run this script when you want to use the Image to SVG Converter feature.
 
 import sys
 import subprocess
-from image_to_svg_api import run_api_server
+from api_tester.image_to_svg_api import run_api_server
 
 def check_python_version():
     """Verify that Python 3.8+ is being used"""

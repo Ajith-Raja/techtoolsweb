@@ -31,49 +31,42 @@ export default function KeywordDensityChecker() {
   const [keywordsInput, setKeywordsInput] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  // Mock mutation for demo purposes
+  // Real API mutation using tanstack/react-query
   const [data, setData] = useState<DensityAnalysisResult | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [isError, setIsError] = useState(false);
   
-  // Mock function to simulate API request
-  const mutate = (params: { type: string; value: string; keywords: string[] }) => {
+  // Real function to call the API
+  const mutate = async (params: { type: string; value: string; keywords: string[] }) => {
     setIsPending(true);
+    setIsError(false);
     
-    // Simulate API delay
-    setTimeout(() => {
-      // Generate mock data based on user input
-      const wordCount = params.type === "url" ? 1250 : params.value.split(/\s+/).filter(w => w.trim().length > 0).length;
-      
-      // Generate realistic mock data based on user input
-      const mockData: DensityAnalysisResult = {
-        totalWords: wordCount,
-        keywords: params.keywords.map(keyword => {
-          // Create more realistic values based on input
-          const count = Math.max(1, Math.floor(wordCount * (Math.random() * 0.05)));
-          return {
-            keyword,
-            count,
-            density: parseFloat(((count / wordCount) * 100).toFixed(2))
-          };
+    try {
+      const response = await fetch("http://localhost:8000/api/keyword-density", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: params.type,
+          value: params.value,
+          keywords: params.keywords
         }),
-        topKeywords: [
-          { keyword: "seo", count: Math.floor(wordCount * 0.023), density: 2.3 },
-          { keyword: "content", count: Math.floor(wordCount * 0.018), density: 1.8 },
-          { keyword: "marketing", count: Math.floor(wordCount * 0.015), density: 1.5 },
-          { keyword: "website", count: Math.floor(wordCount * 0.012), density: 1.2 },
-          { keyword: "analysis", count: Math.floor(wordCount * 0.011), density: 1.1 },
-          { keyword: "search", count: Math.floor(wordCount * 0.009), density: 0.9 },
-          { keyword: "optimization", count: Math.floor(wordCount * 0.008), density: 0.8 },
-          { keyword: "traffic", count: Math.floor(wordCount * 0.006), density: 0.6 },
-          { keyword: "google", count: Math.floor(wordCount * 0.005), density: 0.5 },
-          { keyword: "keywords", count: Math.floor(wordCount * 0.005), density: 0.5 }
-        ],
-        readingTime: `${Math.max(1, Math.ceil(wordCount / 200))} minutes`
-      };
+      });
       
-      setData(mockData);
+      if (!response.ok) {
+        throw new Error("Failed to analyze keyword density");
+      }
+      
+      const resultData = await response.json();
+      setData(resultData as DensityAnalysisResult);
+    } catch (err) {
+      console.error("Error analyzing keyword density:", err);
+      setIsError(true);
+      setError(err instanceof Error ? err.message : "An error occurred when analyzing keywords");
+    } finally {
       setIsPending(false);
-    }, 1500);
+    }
   };
 
   const handleSubmit = () => {

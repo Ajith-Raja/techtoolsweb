@@ -46,7 +46,7 @@ export default function QRCodeGenerator() {
   const [data, setData] = useState("");
   const [size, setSize] = useState(10);
   const [border, setBorder] = useState(4);
-  const [errorCorrection, setErrorCorrection] = useState("M");
+  const [errorCorrection, setErrorCorrection] = useState("H");
   const [fillColor, setFillColor] = useState("#000000");
   const [backColor, setBackColor] = useState("#FFFFFF");
   const [moduleDrawer, setModuleDrawer] = useState("square");
@@ -76,12 +76,16 @@ export default function QRCodeGenerator() {
     note: ""
   });
 
+  const isVCardDataEmpty = (data: VCardData) => {
+    return Object.values(data).every(value => value.trim() === "");
+  };
+
   useEffect(() => {
     // Set loaded state to true when the component mounts
     setLoaded(true);
     
     // Fetch available style options when component mounts
-    const apiUrl = `${window.location.protocol}//${window.location.hostname}:8000/styles`;
+    const apiUrl = `${window.location.protocol}//${window.location.hostname}:8000/qr-styles`;
     fetch(apiUrl)
       .then(response => response.json())
       .then(data => {
@@ -198,16 +202,16 @@ export default function QRCodeGenerator() {
       }
 
       try {
-        const apiUrl = `${window.location.protocol}//${window.location.hostname}:8000/generate`;
+        const apiUrl = `${window.location.protocol}//${window.location.hostname}:8000/generate-qr`;
         const apiResponse = await fetch(apiUrl, {
           method: "POST",
           body: formData,
         });
         
         if (apiResponse.ok) {
-          const blob = await apiResponse.blob();
-          const imageUrl = URL.createObjectURL(blob);
-          setQrCodeImage(imageUrl);
+          const blob = await apiResponse.json();
+          //const imageUrl = URL.createObjectURL(blob);
+          setQrCodeImage(blob.image);
         } else {
           throw new Error("API returned error status");
         }
@@ -628,7 +632,7 @@ export default function QRCodeGenerator() {
                   
                   <Button 
                     onClick={handleGenerateQR} 
-                    disabled={!data || isGenerating}
+                    disabled={(!data && (vCardData.firstName == "")) || isGenerating}
                     className="flex items-center gap-2"
                   >
                     {isGenerating ? (

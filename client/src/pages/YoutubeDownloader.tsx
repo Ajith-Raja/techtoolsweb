@@ -1,397 +1,407 @@
-import { useState, ChangeEvent } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Download, 
-  Youtube, 
-  Search, 
-  Video, 
-  Music, 
-  Volume2, 
-  Film, 
-  FileVideo, 
-  Copy, 
-  Check, 
-  ChevronRight 
-} from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { VideoInfo, VideoFormat, youtubeInfoSchema } from '@shared/schema';
+import { Loader2, DownloadCloud, FileVideo, Play } from 'lucide-react';
+import { formatBytes, formatDuration } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
-interface VideoFormat {
-  id: string;
-  quality: string;
-  format: 'mp4' | 'webm' | 'mp3' | 'ogg';
-  type: 'video' | 'audio';
-  size: string;
-  resolution?: string;
-  fps?: number;
-  bitrate?: string;
-}
-
-interface VideoInfo {
-  id: string;
-  title: string;
-  author: string;
-  thumbnailUrl: string;
-  duration: string;
-  viewCount: string;
-  uploadDate: string;
-  formats: VideoFormat[];
-}
+const formSchema = z.object({
+  url: z.string().url('Please enter a valid URL').refine(
+    url => url.includes('youtube.com') || url.includes('youtu.be'),
+    { message: 'URL must be a valid YouTube URL' }
+  )
+});
 
 export default function YoutubeDownloader() {
-  const [url, setUrl] = useState<string>('');
-  const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
-  const [selectedFormat, setSelectedFormat] = useState<VideoFormat | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [downloading, setDownloading] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
-  const [copied, setCopied] = useState<boolean>(false);
-  const [downloadType, setDownloadType] = useState<'video' | 'audio'>('video');
   const { toast } = useToast();
+  const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState<string>('');
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [downloadStatus, setDownloadStatus] = useState<string>('');
+  const [downloadId, setDownloadId] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('video');
 
-  const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setUrl(e.target.value);
+  // Form setup
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      url: ''
+    }
+  });
+
+  // Get video info
+  const fetchVideoInfo = async (values: z.infer<typeof formSchema>) => {
+    try {
+      setIsLoading(true);
+      setVideoInfo(null);
+      
+      const response = await fetch('http://localhost:8000/youtube/info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch video info');
+      }
+      
+      const data = await response.json();
+      setVideoInfo(data);
+      
+      // Auto select best format if available
+      if (data.formats.length > 0) {
+        setSelectedFormat(data.formats[0].format_id);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching video info:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const fetchVideoInfo = async () => {
-    if (!isValidYoutubeUrl(url)) {
+  // Start download
+  const startDownload = async () => {
+    if (!videoInfo || !selectedFormat) {
       toast({
-        title: "Invalid URL",
-        description: "Please enter a valid YouTube video URL",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Please select a format first',
+        variant: 'destructive',
       });
       return;
     }
-
-    setLoading(true);
-    setVideoInfo(null);
     
-    // Simulate API call to get video info
-    setTimeout(() => {
-      // Extract video ID from URL for thumbnail
-      const videoId = extractVideoId(url);
+    try {
       
-      if (!videoId) {
-        toast({
-          title: "Invalid YouTube URL",
-          description: "Could not extract video ID from the URL",
-          variant: "destructive"
-        });
-        setLoading(false);
-        return;
-      }
+      const videoUrl = videoInfo.formats.filter((e) => e.format_id === selectedFormat)[0].url;
+      window.location.href = videoUrl;
+      // setDownloadStatus('starting');
+      // setDownloadProgress(0);
       
-      // Simulate retrieved video info
-      const mockVideoInfo: VideoInfo = {
-        id: videoId,
-        title: "Sample YouTube Video Title - Amazing Content 2025",
-        author: "Content Creator",
-        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-        duration: "10:15",
-        viewCount: "1.2M",
-        uploadDate: "2025-03-15",
-        formats: [
-          { id: '1', quality: '1080p', format: 'mp4', type: 'video', size: '210 MB', resolution: '1920x1080', fps: 30 },
-          { id: '2', quality: '720p', format: 'mp4', type: 'video', size: '135 MB', resolution: '1280x720', fps: 30 },
-          { id: '3', quality: '480p', format: 'mp4', type: 'video', size: '80 MB', resolution: '854x480', fps: 30 },
-          { id: '4', quality: '360p', format: 'mp4', type: 'video', size: '45 MB', resolution: '640x360', fps: 30 },
-          { id: '5', quality: '240p', format: 'mp4', type: 'video', size: '25 MB', resolution: '426x240', fps: 30 },
-          { id: '6', quality: '144p', format: 'mp4', type: 'video', size: '15 MB', resolution: '256x144', fps: 30 },
-          { id: '7', quality: 'High', format: 'mp3', type: 'audio', size: '10 MB', bitrate: '320 kbps' },
-          { id: '8', quality: 'Medium', format: 'mp3', type: 'audio', size: '6 MB', bitrate: '192 kbps' },
-          { id: '9', quality: 'Low', format: 'mp3', type: 'audio', size: '3 MB', bitrate: '128 kbps' },
-        ],
-      };
+      // const response = await fetch('http://localhost:8000/api/youtube/download', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     url: videoInfo.id.includes('youtube.com') ? videoInfo.id : `https://www.youtube.com/watch?v=${videoInfo.id}`,
+      //     format_id: selectedFormat
+      //   }),
+      // });
       
-      setVideoInfo(mockVideoInfo);
-      // Default selection to 720p for video, high quality for audio
-      const defaultFormat = mockVideoInfo.formats.find(f => f.type === downloadType && 
-        (downloadType === 'video' ? f.quality === '720p' : f.quality === 'High'));
-      if (defaultFormat) {
-        setSelectedFormat(defaultFormat);
-      } else {
-        setSelectedFormat(null);
-      }
-      setLoading(false);
-    }, 1500);
-  };
-
-  const downloadVideo = () => {
-    if (!videoInfo || !selectedFormat) return;
-    
-    setDownloading(true);
-    setProgress(0);
-    
-    // Simulate download progress
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + Math.floor(Math.random() * 10) + 1;
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          setDownloading(false);
-          toast({
-            title: "Download Complete",
-            description: `Your ${selectedFormat.type} has been successfully downloaded.`,
-          });
-          return 100;
-        }
-        return newProgress;
+      // if (!response.ok) {
+      //   const errorData = await response.json();
+      //   throw new Error(errorData.message || 'Failed to start download');
+      // }
+      
+      // const data = await response.json();
+      // setDownloadId(data.download_id);
+      // setDownloadStatus(data.status);
+      
+      // // Poll for status updates
+      // if (data.status === 'downloading' || data.status === 'starting') {
+      //   pollDownloadStatus(data.download_id);
+      // }
+      
+    } catch (error) {
+      console.error('Error starting download:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive',
       });
-    }, 300);
-  };
-
-  const copyVideoUrl = () => {
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  const handleTabChange = (value: string) => {
-    setDownloadType(value as 'video' | 'audio');
-    if (videoInfo) {
-      // When changing tabs, select the default format for that type
-      const defaultFormat = videoInfo.formats.find(f => 
-        f.type === value && (value === 'video' ? f.quality === '720p' : f.quality === 'High')
-      );
-      if (defaultFormat) {
-        setSelectedFormat(defaultFormat);
-      } else {
-        setSelectedFormat(null);
-      }
+      setDownloadStatus('error');
     }
   };
 
-  // Helper function to validate YouTube URL
-  const isValidYoutubeUrl = (url: string): boolean => {
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
-    return youtubeRegex.test(url);
+  // Poll for status updates
+  const pollDownloadStatus = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/youtube/download-status/${id}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to check download status');
+      }
+      
+      const data = await response.json();
+      setDownloadStatus(data.status);
+      
+      // Update progress (simulated for now)
+      if (data.status === 'downloading') {
+        setDownloadProgress(prev => Math.min(prev + 10, 90));
+        setTimeout(() => pollDownloadStatus(id), 1000);
+      } else if (data.status === 'completed') {
+        setDownloadProgress(100);
+        toast({
+          title: 'Download Complete',
+          description: 'Your download is ready!',
+        });
+      } else if (data.status === 'failed') {
+        setDownloadStatus('error');
+        toast({
+          title: 'Download Failed',
+          description: 'There was an error downloading the video',
+          variant: 'destructive',
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error checking download status:', error);
+      setDownloadStatus('error');
+    }
   };
 
-  // Helper function to extract video ID from URL
-  const extractVideoId = (url: string): string | null => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+  // Download the file
+  const downloadFile = async () => {
+    if (!downloadId) return;
+    
+    try {
+      window.location.href = `http://localhost:8000/api/youtube/download-file/${downloadId}`;
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: 'Download Error',
+        description: 'Failed to download the file',
+        variant: 'destructive',
+      });
+    }
   };
+
+  // Filter formats based on active tab
+  let filteredFormats = videoInfo?.formats.filter(format => {
+    if (activeTab === 'video') {
+      return format.height > 0; // Video formats
+    } else {
+      return format.resolution === 'audio only'; // Audio-only formats
+    }
+  }) || [];
+
+  const chooseFormat = async () => {
+    filteredFormats = videoInfo?.formats.filter(format => {
+      if (activeTab === 'video') {
+        return format.height > 0; // Video formats
+      } else {
+        return format.resolution === 'audio only'; // Audio-only formats
+      }
+    }) || [];
+  }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Card className="max-w-5xl mx-auto">
+    <div className="container mx-auto py-8">
+      <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl flex items-center">
-            <Youtube className="h-6 w-6 mr-2 text-primary" />
-            YouTube Video Downloader
-          </CardTitle>
+          <CardTitle className="text-2xl">YouTube Downloader</CardTitle>
           <CardDescription>
-            Download videos and audio from YouTube in various formats and qualities
+            Enter a YouTube URL to download videos in various formats
           </CardDescription>
         </CardHeader>
-        
         <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <Label htmlFor="youtube-url">Enter YouTube Video URL</Label>
-            <div className="flex space-x-2">
-              <Input
-                id="youtube-url"
-                placeholder="https://www.youtube.com/watch?v=..."
-                value={url}
-                onChange={handleUrlChange}
-                disabled={loading || downloading}
-                className="flex-1"
-              />
-              <Button
-                variant="default"
-                onClick={fetchVideoInfo}
-                disabled={!url || loading || downloading}
-              >
-                {loading ? (
-                  <>
-                    <Search className="mr-2 h-4 w-4 animate-spin" />
-                    Fetching...
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4" />
-                    Fetch Info
-                  </>
+          {/* URL Input Form */}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(fetchVideoInfo)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>YouTube URL</FormLabel>
+                    <div className="flex items-center space-x-2">
+                      <FormControl>
+                        <Input 
+                          placeholder="https://www.youtube.com/watch?v=..." 
+                          {...field}
+                          className="flex-1"
+                        />
+                      </FormControl>
+                      <Button type="submit" disabled={isLoading}>
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                            Loading
+                          </>
+                        ) : 'Get Info'}
+                      </Button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={copyVideoUrl}
-                disabled={!url}
-                title="Copy URL"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-          
+              />
+            </form>
+          </Form>
+
+          {/* Video Information */}
           {videoInfo && (
-            <div className="space-y-6">
+            <div className="mt-8 space-y-6">
               <div className="flex flex-col md:flex-row gap-6">
-                <div className="md:w-1/2">
-                  <div className="aspect-video relative rounded-lg overflow-hidden bg-muted">
+                {/* Thumbnail */}
+                <div className="md:w-1/3">
+                  <div className="relative rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
                     <img 
-                      src={videoInfo.thumbnailUrl} 
-                      alt={videoInfo.title} 
-                      className="object-cover w-full h-full"
-                      onError={(e) => {
-                        // Fallback to SD thumbnail if HD is not available
-                        const target = e.target as HTMLImageElement;
-                        target.src = `https://img.youtube.com/vi/${videoInfo.id}/0.jpg`;
-                      }}
+                      src={videoInfo.thumbnail} 
+                      alt={videoInfo.title}
+                      className="w-full h-auto object-cover"
                     />
-                    <div className="absolute bottom-0 right-0 bg-black/70 text-white px-2 py-1 text-xs rounded-tl-md">
-                      {videoInfo.duration}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity">
+                      <Play className="w-12 h-12 text-white" />
                     </div>
                   </div>
                 </div>
                 
-                <div className="md:w-1/2 space-y-3">
-                  <h3 className="text-lg font-semibold line-clamp-2">{videoInfo.title}</h3>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Channel:</span>
-                      <span className="font-medium">{videoInfo.author}</span>
+                {/* Video Details */}
+                <div className="md:w-2/3 space-y-4">
+                  <h3 className="text-xl font-semibold">{videoInfo.title}</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Channel</p>
+                      <p>{videoInfo.uploader}</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Views:</span>
-                      <span>{videoInfo.viewCount}</span>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Duration</p>
+                      <p>{formatDuration(videoInfo.duration)}</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Upload Date:</span>
-                      <span>{videoInfo.uploadDate}</span>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Views</p>
+                      <p>{videoInfo.view_count.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Uploaded</p>
+                      <p>{formatDate(videoInfo.upload_date)}</p>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <div className="border-t pt-4">
-                <Tabs defaultValue="video" value={downloadType} onValueChange={handleTabChange}>
+              <Separator />
+              
+              {/* Format Selection */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Select Format</h3>
+                
+                <Tabs defaultValue="video" onValueChange={setActiveTab}>
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="video" className="flex items-center">
-                      <Video className="w-4 h-4 mr-2" />
-                      Video
-                    </TabsTrigger>
-                    <TabsTrigger value="audio" className="flex items-center">
-                      <Volume2 className="w-4 h-4 mr-2" />
-                      Audio
-                    </TabsTrigger>
+                    <TabsTrigger onClick={chooseFormat} value="video">Video</TabsTrigger>
+                    <TabsTrigger value="audio">Audio Only</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="video" className="pt-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label>Select Video Quality</Label>
-                      <RadioGroup 
-                        value={selectedFormat?.id ?? ""} 
-                        onValueChange={(value) => {
-                          const format = videoInfo.formats.find(f => f.id === value && f.type === 'video');
-                          if (format) {
-                            setSelectedFormat(format);
-                          }
-                        }}
+                  <TabsContent value="video" className="space-y-4">
+                    <div className="mt-4">
+                      <Select 
+                        value={selectedFormat} 
+                        onValueChange={setSelectedFormat}
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {videoInfo.formats
-                            .filter(format => format.type === 'video')
-                            .map(format => (
-                              <div key={format.id} className={`flex items-center space-x-2 border rounded-md p-3 
-                                ${selectedFormat?.id === format.id ? 'border-primary bg-primary/5' : 'border-border'}`}
-                              >
-                                <RadioGroupItem value={format.id} id={`quality-${format.id}`} />
-                                <Label htmlFor={`quality-${format.id}`} className="flex flex-1 justify-between cursor-pointer">
-                                  <div className="flex items-center">
-                                    <FileVideo className="h-4 w-4 mr-2 text-primary" />
-                                    <span className="font-medium">{format.quality}</span>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-xs text-muted-foreground">{format.resolution}</div>
-                                    <div className="text-xs">{format.size}</div>
-                                  </div>
-                                </Label>
-                              </div>
-                            ))
-                          }
-                        </div>
-                      </RadioGroup>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a format" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredFormats.map(format => (
+                            <SelectItem key={format.format_id} value={format.format_id}>
+                              {format.height}p ({format.ext}) - {format.filesize > 0 ? formatBytes(format.filesize) : 'Unknown size'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="audio" className="pt-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label>Select Audio Quality</Label>
-                      <RadioGroup 
-                        value={selectedFormat?.id ?? ""} 
-                        onValueChange={(value) => {
-                          const format = videoInfo.formats.find(f => f.id === value && f.type === 'audio');
-                          if (format) {
-                            setSelectedFormat(format);
-                          }
-                        }}
+                  <TabsContent value="audio" className="space-y-4">
+                    <div className="mt-4">
+                      <Select 
+                        value={selectedFormat} 
+                        onValueChange={setSelectedFormat}
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {videoInfo.formats
-                            .filter(format => format.type === 'audio')
-                            .map(format => (
-                              <div key={format.id} className={`flex items-center space-x-2 border rounded-md p-3 
-                                ${selectedFormat?.id === format.id ? 'border-primary bg-primary/5' : 'border-border'}`}
-                              >
-                                <RadioGroupItem value={format.id} id={`quality-${format.id}`} />
-                                <Label htmlFor={`quality-${format.id}`} className="flex flex-1 justify-between cursor-pointer">
-                                  <div className="flex items-center">
-                                    <Music className="h-4 w-4 mr-2 text-primary" />
-                                    <span className="font-medium">{format.quality}</span>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-xs text-muted-foreground">{format.bitrate}</div>
-                                    <div className="text-xs">{format.size}</div>
-                                  </div>
-                                </Label>
-                              </div>
-                            ))
-                          }
-                        </div>
-                      </RadioGroup>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an audio format" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredFormats.map(format => (
+                            <SelectItem key={format.format_id} value={format.format_id}>
+                              {format.format_note} ({format.ext}) - {format.filesize > 0 ? formatBytes(format.filesize) : 'Unknown size'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </TabsContent>
                 </Tabs>
               </div>
               
-              {downloading && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Downloading {selectedFormat?.type === 'video' ? 'video' : 'audio'}...</span>
-                    <span>{progress}%</span>
+              {/* Download Section */}
+              <div className="space-y-4">
+                {downloadStatus === 'completed' ? (
+                  <Button 
+                    onClick={downloadFile} 
+                    className="w-full" 
+                    size="lg"
+                  >
+                    <FileVideo className="mr-2 h-5 w-5" />
+                    Download File
+                  </Button>
+                ) : downloadStatus === 'downloading' || downloadStatus === 'starting' ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Downloading...</span>
+                      <span>{downloadProgress}%</span>
+                    </div>
+                    <Progress value={downloadProgress} className="h-2" />
                   </div>
-                  <Progress value={progress} className="h-2" />
-                </div>
-              )}
+                ) : (
+                  <Button 
+                    onClick={startDownload} 
+                    className="w-full" 
+                    size="lg" 
+                    disabled={!selectedFormat || isLoading}
+                  >
+                    <DownloadCloud className="mr-2 h-5 w-5" />
+                    Download
+                  </Button>
+                )}
+                
+                {downloadStatus === 'error' && (
+                  <p className="text-sm text-red-500 text-center">
+                    There was an error with your download. Please try again.
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
-        
-        <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-end">
-          {videoInfo && selectedFormat && !downloading && (
-            <Button
-              variant="default"
-              className="w-full sm:w-auto"
-              onClick={downloadVideo}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download {selectedFormat.type === 'video' ? `Video (${selectedFormat.quality})` : `Audio (${selectedFormat.quality})`}
-            </Button>
-          )}
-        </CardFooter>
       </Card>
     </div>
   );
+}
+
+// Helper function to format date from YYYYMMDD format
+function formatDate(dateStr: string): string {
+  if (!dateStr || dateStr.length !== 8) return 'Unknown date';
+  
+  const year = dateStr.substring(0, 4);
+  const month = dateStr.substring(4, 6);
+  const day = dateStr.substring(6, 8);
+  
+  const date = new Date(`${year}-${month}-${day}`);
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 }

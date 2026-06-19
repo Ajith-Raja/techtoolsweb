@@ -6,17 +6,35 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Link2, Hash, Shield, AlertCircle, ExternalLink } from "lucide-react";
+import { 
+  TrendingUp, Link2, Hash, Shield, AlertCircle, ExternalLink, 
+  Anchor, ChevronUp, ChevronDown, RefreshCw 
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
+interface BacklinkInfo {
+  url: string;
+  domain: string;
+  anchor_text: string;
+  page_authority: number;
+}
 
 interface AuthorityInfo {
   domain: string;
-  domainAuthority: number;
-  pageAuthority: number;
-  spamScore: number;
-  linkingDomains: number;
-  totalBacklinks: number;
-  topKeywords: string[];
+  domain_authority?: number;  // From Python API
+  domainAuthority?: number;   // From JavaScript fallback
+  page_authority?: number;    // From Python API
+  pageAuthority?: number;     // From JavaScript fallback
+  spam_score?: number;        // From Python API
+  spamScore?: number;         // From JavaScript fallback
+  linking_domains?: number;   // From Python API
+  linkingDomains?: number;    // From JavaScript fallback
+  total_backlinks?: number;   // From Python API
+  totalBacklinks?: number;    // From JavaScript fallback
+  top_keywords?: string[];    // From Python API
+  topKeywords?: string[];     // From JavaScript fallback
+  top_backlinks?: BacklinkInfo[]; // From Python API only
 }
 
 export default function DomainAuthorityChecker() {
@@ -25,7 +43,7 @@ export default function DomainAuthorityChecker() {
   
   const mutation = useMutation({
     mutationFn: async (domainUrl: string) => {
-      const response = await fetch("/api/domain-authority", {
+      const response = await fetch("http://localhost:8000/api/domain-authority/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: domainUrl })
@@ -53,13 +71,15 @@ export default function DomainAuthorityChecker() {
   };
   
   // Helper function to get color based on score
-  const getScoreColor = (score: number) => {
+  const getScoreColor = (score: number | undefined) => {
+    if (!score) return "text-gray-600 font-semibold";
     if (score >= 70) return "text-green-600 font-semibold";
     if (score >= 40) return "text-amber-600 font-semibold";
     return "text-red-600 font-semibold";
   };
   
-  const getSpamScoreColor = (score: number) => {
+  const getSpamScoreColor = (score: number | undefined) => {
+    if (!score) return "text-gray-600 font-semibold";
     if (score <= 1) return "text-green-600 font-semibold";
     if (score <= 3) return "text-amber-600 font-semibold";
     return "text-red-600 font-semibold";
@@ -160,26 +180,26 @@ export default function DomainAuthorityChecker() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="flex flex-col items-center justify-center bg-primary/5 p-6 rounded-lg">
                     <span className="text-lg font-medium text-muted-foreground">Domain Authority</span>
-                    <span className={`text-5xl mt-2 ${getScoreColor(mutation.data.domainAuthority)}`}>
-                      {mutation.data.domainAuthority}
+                    <span className={`text-5xl mt-2 ${getScoreColor(mutation.data.domain_authority || mutation.data.domainAuthority || 0)}`}>
+                      {mutation.data.domain_authority || mutation.data.domainAuthority}
                     </span>
                     <span className="text-sm mt-2 text-muted-foreground">/100</span>
                   </div>
                   
                   <div className="flex flex-col items-center justify-center bg-primary/5 p-6 rounded-lg">
                     <span className="text-lg font-medium text-muted-foreground">Page Authority</span>
-                    <span className={`text-5xl mt-2 ${getScoreColor(mutation.data.pageAuthority)}`}>
-                      {mutation.data.pageAuthority}
+                    <span className={`text-5xl mt-2 ${getScoreColor(mutation.data.page_authority || mutation.data.pageAuthority || 0)}`}>
+                      {mutation.data.page_authority || mutation.data.pageAuthority}
                     </span>
                     <span className="text-sm mt-2 text-muted-foreground">/100</span>
                   </div>
                   
                   <div className="flex flex-col items-center justify-center bg-primary/5 p-6 rounded-lg">
                     <span className="text-lg font-medium text-muted-foreground">Spam Score</span>
-                    <span className={`text-5xl mt-2 ${getSpamScoreColor(mutation.data.spamScore)}`}>
-                      {mutation.data.spamScore}
+                    <span className={`text-5xl mt-2 ${getSpamScoreColor(mutation.data.spam_score || mutation.data.spamScore || 0)}`}>
+                      {mutation.data.spam_score || mutation.data.spamScore}
                     </span>
-                    <span className="text-sm mt-2 text-muted-foreground">/17</span>
+                    {/* <span className="text-sm mt-2 text-muted-foreground">/17</span> */}
                   </div>
                 </div>
                 
@@ -197,7 +217,7 @@ export default function DomainAuthorityChecker() {
                         Linking Domains
                       </TableCell>
                       <TableCell>
-                        {mutation.data.linkingDomains.toLocaleString()}
+                        {(mutation.data.linking_domains || mutation.data.linkingDomains || 0).toLocaleString()}
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -206,7 +226,7 @@ export default function DomainAuthorityChecker() {
                         Total Backlinks
                       </TableCell>
                       <TableCell>
-                        {mutation.data.totalBacklinks.toLocaleString()}
+                        {(mutation.data.total_backlinks || mutation.data.totalBacklinks || 0).toLocaleString()}
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -216,7 +236,7 @@ export default function DomainAuthorityChecker() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-2">
-                          {mutation.data.topKeywords.map((keyword, index) => (
+                          {(mutation.data.top_keywords || mutation.data.topKeywords || []).map((keyword, index) => (
                             <Badge key={index} variant="secondary">
                               {keyword}
                             </Badge>
@@ -226,6 +246,58 @@ export default function DomainAuthorityChecker() {
                     </TableRow>
                   </TableBody>
                 </Table>
+                
+                {/* Backlinks section - only available from Python API */}
+                {mutation.data.top_backlinks && mutation.data.top_backlinks.length > 0 && (
+                  <div className="mt-8">
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="backlinks">
+                        <AccordionTrigger className="font-medium text-lg flex items-center">
+                          <Anchor className="mr-2 h-5 w-5 text-primary" />
+                          Top Backlinks
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Domain</TableHead>
+                                <TableHead>Anchor Text</TableHead>
+                                <TableHead className="text-right">Page Authority</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {mutation.data.top_backlinks.map((backlink, index) => (
+                                <TableRow key={index}>
+                                  <TableCell className="font-medium">
+                                    <a 
+                                      href={backlink.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-primary hover:underline flex items-center"
+                                    >
+                                      {backlink.domain}
+                                      <ExternalLink className="ml-1 h-3 w-3" />
+                                    </a>
+                                  </TableCell>
+                                  <TableCell>{backlink.anchor_text}</TableCell>
+                                  <TableCell className="text-right">
+                                    <Badge 
+                                      variant={backlink.page_authority > 50 ? "default" : "secondary"}
+                                      className={backlink.page_authority > 70 ? "bg-green-500" : 
+                                               backlink.page_authority > 40 ? "bg-amber-500" : ""}
+                                    >
+                                      {backlink.page_authority}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+                )}
                 
                 <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
                   <h3 className="font-medium flex items-center text-blue-800 dark:text-blue-400 mb-2">
@@ -238,6 +310,7 @@ export default function DomainAuthorityChecker() {
                     <li><span className="font-medium">Spam Score</span> - Indicates the likelihood of a page being penalized by search engines (lower is better)</li>
                     <li><span className="font-medium">Linking Domains</span> - The number of unique domains linking to this website</li>
                     <li><span className="font-medium">Total Backlinks</span> - The total number of links pointing to this website</li>
+                    {mutation.data.top_backlinks && <li><span className="font-medium">Top Backlinks</span> - The most valuable inbound links to your website</li>}
                   </ul>
                 </div>
               </CardContent>

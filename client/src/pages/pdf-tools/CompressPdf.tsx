@@ -22,30 +22,51 @@ export default function CompressPdf() {
   const { toast } = useToast();
 
   // Hook for real-time progress tracking
-  usePdfProgress(taskId, (progressData: PdfProgress) => {
+  const socket = usePdfProgress(taskId, (progressData: PdfProgress) => {
     if (progressData.status === 'processing') {
       setProgress(progressData.progress);
-    } else if (progressData.status === 'success') {
+    } else if (progressData.status === 'success' || progressData.status === 'completed') {
       setProgress(100);
       setUploading(false);
       setCompleted(true);
-      checkTaskStatus(taskId as string)
-        .then(result => {
-          if (result.download_url) {
-            setDownloadUrl(result.download_url);
-          }
-        })
-        .catch(console.error);
       
-      toast({
-        title: 'PDF Compressed Successfully',
-        description: 'Your file is ready to download.',
-      });
+      // Get the download URL
+      if (taskId) {
+        debugger;
+        checkTaskStatus(taskId)
+          .then(result => {
+            if (result.status === 'success' || result.status === 'completed') {
+              //setDownloadUrl(getDownloadUrl(result.result_file.split(/(\\|\/)/g).pop() || '' ));
+              toast({
+                title: 'PDF Compressed Successfully',
+                description: 'Your file is ready to download.',
+              });
+            }
+          })
+          .catch(err => {
+            console.error('Failed to get task status:', err);
+            setError('Failed to get download URL');
+          });
+      }
     } else if (progressData.status === 'error') {
       setUploading(false);
       setError(progressData.error || 'An error occurred during compression');
+      toast({
+        title: 'Compression Failed',
+        description: progressData.error || 'An error occurred during compression',
+        variant: 'destructive',
+      });
     }
   });
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close(1000, 'Component unmounting');
+      }
+    };
+  }, [socket]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -87,6 +108,7 @@ export default function CompressPdf() {
     
     setUploading(true);
     setError(null);
+    setProgress(0);
     
     try {
       // Get quality level (100 - compression level to invert the scale)
@@ -115,6 +137,9 @@ export default function CompressPdf() {
   };
 
   const resetForm = () => {
+    if (socket) {
+      socket.close(1000, 'Resetting form');
+    }
     setFile(null);
     setCompressionLevel(80);
     setProgress(0);

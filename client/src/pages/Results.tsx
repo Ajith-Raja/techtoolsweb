@@ -24,6 +24,7 @@ import {
   Download
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import type { SeoAnalysisResult } from "@shared/schema";
 
 function ScoreIndicator({ score }: { score: number }) {
@@ -66,9 +67,10 @@ function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
 
 export default function Results() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const { data: result, isLoading, isError } = useQuery<SeoAnalysisResult>({
-    queryKey: ["/api/lastAnalysis"],
+    queryKey: ["http://localhost:8000/api/lastAnalysis"],
     staleTime: 0,
     retry: false,
   });
@@ -157,6 +159,11 @@ export default function Results() {
   }
 
   if (isError || !result) {
+    toast({
+      title: "No analysis data",
+      description: "No analysis data available. Please analyze a URL first.",
+      variant: "destructive",
+    });
     setLocation("/");
     return null;
   }

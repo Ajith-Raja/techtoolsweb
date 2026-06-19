@@ -423,11 +423,12 @@ export default function ApiTester() {
       try {
         const result = await apiRequest("POST", "http://localhost:8000/api/share", requestData);
         const shareData = await result.json();
-        
+        debugger;
         if (shareData.share_id) {
           // Create the share URL
           const shareUrl = `${window.location.origin}/api-tester?share=${shareData.share_id}`;
           setShareUrl(shareUrl);
+          await navigator.clipboard.writeText(shareUrl);
           
           toast({
             title: "Request shared successfully",
@@ -992,9 +993,7 @@ export default function ApiTester() {
           <CardDescription>
             Test APIs with different methods, headers, and body formats.
           </CardDescription>
-          <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md text-yellow-800 dark:text-yellow-200">
-            <strong>Note:</strong> To use this feature, you need to start the FastAPI server by running <code className="bg-yellow-100 dark:bg-yellow-800/40 px-1 rounded">python start_api_server.py</code> in your terminal.
-          </div>
+
           
           {shareUrl && (
             <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-blue-800 dark:text-blue-200">

@@ -30,7 +30,7 @@ export default function Home() {
 
   const analyzeMutation = useMutation({
     mutationFn: async (data: AnalyzeSiteInput) => {
-      const response = await apiRequest("POST", "/api/analyze", data);
+      const response = await apiRequest("POST", "http://localhost:8000/api/analyze", data);
       return response.json();
     },
     onSuccess: () => {

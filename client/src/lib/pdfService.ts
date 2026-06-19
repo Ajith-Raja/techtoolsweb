@@ -10,7 +10,7 @@ const WS_BASE_URL = "ws://localhost:8001";
 
 export interface PdfTaskResult {
   task_id: string;
-  status: "success" | "error" | "processing";
+  status: "success" | "error" | "processing" | "completed";
   download_url?: string;
   error_message?: string;
   result?: any;
@@ -19,8 +19,9 @@ export interface PdfTaskResult {
 export interface PdfProgress {
   task_id: string;
   progress: number;
-  status: "processing" | "success" | "error";
+  status: "processing" | "success" | "error" | "completed";
   error?: string;
+  file?: string;
 }
 
 export type PdfTask = 
@@ -44,8 +45,44 @@ export type PdfTask =
  * Create a WebSocket connection to track task progress
  */
 export function createProgressWebSocket(taskId: string): WebSocket {
-  const socket = new WebSocket(`${WS_BASE_URL}/ws/${taskId}`);
-  return socket;
+  if (!taskId) {
+    throw new Error('Task ID is required to create WebSocket connection');
+  }
+
+  // Ensure the WebSocket URL is properly constructed
+  const wsUrl = `${WS_BASE_URL}/ws/pdf/${taskId}`;
+  console.log('Creating WebSocket connection to:', wsUrl);
+  
+  try {
+    const socket = new WebSocket(wsUrl);
+    
+    // Add error handler to catch connection failures
+    socket.onerror = (error) => {
+      console.error('WebSocket connection error:', error);
+      // Close the socket if it's in a bad state
+      if (socket.readyState !== socket.OPEN) {
+        socket.close(1000, 'Connection error');
+      }
+    };
+
+    // Add connection timeout
+    const connectionTimeout = setTimeout(() => {
+      if (socket.readyState !== socket.OPEN) {
+        console.error('WebSocket connection timeout');
+        socket.close(1000, 'Connection timeout');
+      }
+    }, 5000); // 5 second timeout
+
+    socket.onopen = () => {
+      console.log('WebSocket connection established');
+      clearTimeout(connectionTimeout);
+    };
+    
+    return socket;
+  } catch (error) {
+    console.error('Failed to create WebSocket connection:', error);
+    throw new Error('Failed to establish WebSocket connection');
+  }
 }
 
 /**
@@ -74,7 +111,7 @@ export async function compressPdf(pdfFile: File, quality: number): Promise<strin
   formData.append('pdf_file', pdfFile);
   formData.append('quality', quality.toString());
 
-  const response = await fetch(`${PDF_API_BASE_URL}/compress_pdf`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/compress_pdf/`, {
     method: 'POST',
     body: formData,
   });
@@ -120,7 +157,7 @@ export async function imagesToPdf(images: File[], pageSize: string, margin: numb
   formData.append('page_size', pageSize);
   formData.append('margin', margin.toString());
 
-  const response = await fetch(`${PDF_API_BASE_URL}/images_to_pdf`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/images_to_pdf/`, {
     method: 'POST',
     body: formData,
   });
@@ -186,7 +223,7 @@ export async function mergePdfs(pdfFiles: File[]): Promise<string> {
     formData.append('pdf_files', file);
   });
 
-  const response = await fetch(`${PDF_API_BASE_URL}/merge_pdfs`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/merge_pdfs/`, {
     method: 'POST',
     body: formData,
   });
@@ -220,7 +257,7 @@ export async function splitPdf(
     formData.append('page_ranges', pageRanges);
   }
 
-  const response = await fetch(`${PDF_API_BASE_URL}/split_pdf`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/split_pdf/`, {
     method: 'POST',
     body: formData,
   });
@@ -331,7 +368,7 @@ export async function rotatePages(
     formData.append('page_range', pageRange);
   }
 
-  const response = await fetch(`${PDF_API_BASE_URL}/rotate_pages`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/rotate_pages/`, {
     method: 'POST',
     body: formData,
   });
@@ -452,47 +489,124 @@ export async function pdfToWord(pdfFile: File): Promise<string> {
  * Hook to handle the WebSocket connection for real-time progress tracking
  */
 export function usePdfProgress(taskId: string | null, onProgressUpdate: (progress: PdfProgress) => void) {
-  const [socket, setSocket] = React.useState<WebSocket | null>(null);
+  const reconnectTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const reconnectAttemptsRef = React.useRef(0);
+  const socketRef = React.useRef<WebSocket | null>(null);
+  const taskIdRef = React.useRef<string | null>(taskId);
+  const onProgressRef = React.useRef(onProgressUpdate);
+  const isClosingRef = React.useRef(false);
+
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const MAX_RECONNECT_DELAY = 5000;
+
+  const closeSocket = React.useCallback((code: number, reason: string) => {
+    if (socketRef.current && !isClosingRef.current) {
+      isClosingRef.current = true;
+      try {
+        socketRef.current.close(code, reason);
+      } catch (e) {
+        console.error('Error closing socket:', e);
+      } finally {
+        socketRef.current = null;
+        isClosingRef.current = false;
+      }
+    }
+  }, []);
 
   React.useEffect(() => {
-    if (!taskId) return;
+    taskIdRef.current = taskId;
+  }, [taskId]);
 
-    // Create WebSocket connection
-    const newSocket = createProgressWebSocket(taskId);
-    
-    // Set up event handlers
-    newSocket.onopen = () => {
-      console.log(`WebSocket connection established for task ${taskId}`);
-    };
-    
-    newSocket.onmessage = (event) => {
-      const data = JSON.parse(event.data) as PdfProgress;
-      onProgressUpdate(data);
-    };
-    
-    newSocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      onProgressUpdate({
-        task_id: taskId,
-        progress: 0,
-        status: 'error',
-        error: 'Connection error'
-      });
-    };
-    
-    newSocket.onclose = () => {
-      console.log(`WebSocket connection closed for task ${taskId}`);
-    };
-    
-    setSocket(newSocket);
-    
-    // Cleanup function
-    return () => {
-      if (newSocket && newSocket.readyState === WebSocket.OPEN) {
-        newSocket.close();
+  React.useEffect(() => {
+    onProgressRef.current = onProgressUpdate;
+  }, [onProgressUpdate]);
+
+  React.useEffect(() => {
+    if (!taskId) {
+      closeSocket(1000, 'Task ID is null');
+      return;
+    }
+
+    const connectWebSocket = () => {
+      if (socketRef.current) {
+        closeSocket(1000, 'Creating new connection');
+      }
+
+      try {
+        const newSocket = createProgressWebSocket(taskId);
+        socketRef.current = newSocket;
+
+        newSocket.onopen = () => {
+          console.log(`WebSocket connected for task ${taskId}`);
+          reconnectAttemptsRef.current = 0;
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
+        };
+
+        newSocket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data) as PdfProgress;
+            onProgressRef.current(data);
+            
+            // Close the socket if the task is completed
+            if (['success', 'error', 'completed'].includes(data.status)) {
+              console.log(`Task ${taskId} completed with status: ${data.status}`);
+              closeSocket(1000, 'Task completed');
+            }
+          } catch (err) {
+            console.error('Parse error:', err);
+            onProgressRef.current({ task_id: taskId, progress: 0, status: 'error', error: 'Parse error' });
+            closeSocket(1000, 'Parse error');
+          }
+        };
+
+        newSocket.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          onProgressRef.current({ task_id: taskId, progress: 0, status: 'error', error: 'Connection error' });
+          closeSocket(1000, 'Connection error');
+        };
+
+        newSocket.onclose = (event) => {
+          console.log(`WebSocket closed: ${event.code} - ${event.reason}`);
+          socketRef.current = null;
+          isClosingRef.current = false;
+        
+          if (event.code !== 1000 && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, MAX_RECONNECT_DELAY);
+            reconnectTimeoutRef.current = setTimeout(() => {
+              reconnectAttemptsRef.current += 1;
+              connectWebSocket();
+            }, delay);
+          } else if (event.code !== 1000) {
+            onProgressRef.current({
+              task_id: taskId,
+              progress: 0,
+              status: 'error',
+              error: 'Connection failed after multiple attempts',
+            });
+          }
+        };
+      } catch (error) {
+        console.error('Failed to create WebSocket:', error);
+        onProgressRef.current({
+          task_id: taskId,
+          progress: 0,
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
     };
-  }, [taskId, onProgressUpdate]);
 
-  return socket;
+    connectWebSocket();
+
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      closeSocket(1000, 'Component unmounting');
+    };
+  }, [taskId, closeSocket]);
+
+  return socketRef.current;
 }

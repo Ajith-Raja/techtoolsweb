@@ -88,21 +88,53 @@ export type ContentGapKeyword = {
   contentSuggestion: string;
 };
 
+export type ContentGapCategory = {
+  category?: string;
+  name?: string;
+  keywordCount?: number;
+  count?: number;
+};
+
 export type ContentGapAnalysisResult = {
+  // Fields common to both frontend & Python formats
   yourDomain: string;
-  competitorDomains: string[];
+  competitorDomains: string[];  // This maps to 'competitors' in Python API
+  dateAnalyzed: string;
+  premium?: boolean;
+
+  // Analysis info
   analysis: {
     totalMissingKeywords: number;
-    lowDifficultyOpportunities: number;
-    highTrafficOpportunities: number;
-    topCategories: Array<{
-      category: string;
-      keywordCount: number;
+    lowDifficultyOpportunities: number | string;
+    highTrafficOpportunities: number | string;
+    topCategories: ContentGapCategory[];
+    recommendedActions?: Array<{
+      action: string;
+      priority: string;
+      difficulty: string;
     }>;
   };
+
+  // Keywords section (keywordGaps in Python API)
   keywords: ContentGapKeyword[];
-  dateAnalyzed: string;
-  premium: boolean;
+
+  // Optional fields that may be returned from Python API
+  contentOpportunities?: Array<{
+    title: string;
+    description: string;
+    keywords?: string[];
+  }>;
+  
+  // Additional fields specific to Python format (optional)
+  // These fields support both old and new format
+  competitors?: string[];  // Same as competitorDomains but used by Python API
+  keywordGaps?: ContentGapKeyword[];  // Same as keywords but used by Python API
+  topicGaps?: string[];  // Used to build topCategories in server mapping
+  recommendedActions?: Array<{
+    action: string;
+    priority: string;
+    difficulty: string;
+  }>;
 };
 
 export type SeoAnalysisResult = {
@@ -164,3 +196,184 @@ export type SeoAnalysisResult = {
     solution: string;
   }>;
 };
+
+// Domain Authority types
+export type DomainAuthorityResult = {
+  domain: string;
+  domainAuthority: number;
+  pageAuthority: number;
+  spamScore: number;
+  linkingDomains: number;
+  totalBacklinks: number;
+  topKeywords: string[];
+};
+
+export const domainAuthoritySchema = z.object({
+  url: z.string().url("Please enter a valid URL")
+});
+
+// Plagiarism Check types
+export type PlagiarismResult = {
+  originalText: string;
+  similarityScore: number;
+  matchedSources: {
+    url: string;
+    title: string;
+    snippet: string;
+    matchPercentage: number;
+  }[];
+  uniquenessPercentage: number;
+  analyzedLength: number;
+  highlightedText?: string;
+};
+
+export const plagiarismCheckSchema = z.object({
+  text: z.string().min(1, "Text is required"),
+  type: z.enum(["text", "url"]),
+});
+
+export type PlagiarismCheckInput = z.infer<typeof plagiarismCheckSchema>;
+
+// Readability types
+export type ReadabilityScore = {
+  fleschReading: {
+    score: number;
+    level: string;
+  };
+  fleschKincaid: {
+    score: number;
+    grade: string;
+  };
+  gunningFog: {
+    score: number;
+    level: string;
+  };
+  smog: {
+    score: number;
+    level: string;
+  };
+  textDetails: {
+    wordCount: number;
+    sentenceCount: number;
+    syllableCount: number;
+    readingTime: string;
+  };
+};
+
+export const readabilityAnalysisSchema = z.object({
+  type: z.enum(["url", "content"]),
+  value: z.string().min(1, "Content or URL required")
+});
+
+// Keyword Density types
+export type KeywordResult = {
+  keyword: string;
+  count: number;
+  density: number;
+};
+
+export type DensityAnalysisResult = {
+  totalWords: number;
+  keywords: KeywordResult[];
+  topKeywords: KeywordResult[];
+  readingTime: string;
+};
+
+export const keywordDensitySchema = z.object({
+  type: z.enum(["url", "content"]),
+  value: z.string().min(1, "Content or URL required"),
+  keywords: z.array(z.string()).min(1, "At least one keyword is required")
+});
+
+// Pre-Launch Audit types
+export type AuditIssue = {
+  type: 'error' | 'warning' | 'info';
+  title: string;
+  description: string;
+  affectedPages?: string[];
+  impact: 'high' | 'medium' | 'low';
+  recommendation: string;
+};
+
+export type PageAudit = {
+  url: string;
+  title: string;
+  metaDescription: string;
+  h1Count: number;
+  wordCount: number;
+  statusCode: number;
+  loadTime: number;
+  mobileResponsive: boolean;
+  issues: AuditIssue[];
+};
+
+export type AuditResult = {
+  siteScore: number;
+  totalPages: number;
+  pagesWithIssues: number;
+  criticalIssues: number;
+  warningIssues: number;
+  infoIssues: number;
+  commonIssues: AuditIssue[];
+  pageResults: PageAudit[];
+  crawlDate: string;
+};
+
+export const preLaunchAuditSchema = z.object({
+  url: z.string().url("Please enter a valid URL"),
+  sitemapUrl: z.string().url("Please enter a valid sitemap URL").optional(),
+  maxPages: z.number().min(1).max(100),
+  userAgent: z.string(),
+  requiresAuth: z.boolean(),
+  authUsername: z.string().optional(),
+  authPassword: z.string().optional()
+});
+
+// YouTube Downloader types
+export type VideoFormat = {
+  format_id: string;
+  ext: string;
+  resolution: string;
+  fps: number;
+  filesize: number;
+  format_note: string;
+  height: number;
+  width: number;
+  url: string;
+  acodec: string;
+  vcodec: string;
+};
+
+export type VideoInfo = {
+  id: string;
+  title: string;
+  thumbnail: string;
+  duration: number;  // in seconds
+  formats: VideoFormat[];
+  upload_date: string;
+  uploader: string;
+  view_count: number;
+  description?: string;
+};
+
+export const youtubeInfoSchema = z.object({
+  url: z.string()
+    .url("Please enter a valid URL")
+    .refine(
+      url => url.includes("youtube.com") || url.includes("youtu.be"),
+      { message: "URL must be a valid YouTube URL" }
+    )
+});
+
+export const youtubeDownloadSchema = z.object({
+  url: z.string()
+    .url("Please enter a valid URL")
+    .refine(
+      url => url.includes("youtube.com") || url.includes("youtu.be"),
+      { message: "URL must be a valid YouTube URL" }
+    ),
+  format_id: z.string().min(1, "Format is required")
+});
+
+export type YoutubeInfoInput = z.infer<typeof youtubeInfoSchema>;
+export type YoutubeDownloadInput = z.infer<typeof youtubeDownloadSchema>;

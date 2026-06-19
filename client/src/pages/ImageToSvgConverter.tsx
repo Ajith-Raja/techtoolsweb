@@ -91,15 +91,13 @@ export default function ImageToSvgConverter() {
     
     try {
       // Use the Replit URL if available, otherwise fallback to localhost for development
-      const baseUrl = window.location.hostname.includes('replit') 
-        ? `${window.location.protocol}//${window.location.hostname}`
-        : 'http://localhost:8002';
+      const baseUrl = 'http://localhost:8000';
         
-      const response = await fetch(`${baseUrl}/convert`, {
+      const response = await fetch(`${baseUrl}/svg-convert`, {
         method: 'POST',
         body: formData,
       });
-      
+      debugger;
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to convert image to SVG');

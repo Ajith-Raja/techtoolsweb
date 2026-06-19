@@ -52,7 +52,7 @@ export default function ReadabilityChecker() {
   
   const mutation = useMutation({
     mutationFn: async ({ type, value }: { type: string; value: string }) => {
-      const response = await fetch("/api/readability", {
+      const response = await fetch("http://localhost:8000/api/readability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

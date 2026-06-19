@@ -1,0 +1,827 @@
+{
+  "siteScore": 90.47,
+  "totalPages": 43,
+  "pagesWithIssues": 11,
+  "criticalIssues": 1,
+  "warningIssues": 0,
+  "infoIssues": 38,
+  "commonIssues": [
+    {
+      "type": "error",
+      "title": "Page unreachable",
+      "description": "Request failed",
+      "affectedPages": [
+        "https://www.techtoolsweb.com/typing/"
+      ],
+      "impact": "high",
+      "recommendation": "Ensure the server is accessible."
+    },
+    {
+      "type": "info",
+      "title": "Missing image alt text",
+      "description": "One or more images lack alt text",
+      "affectedPages": [
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/xml-to-json#!",
+        "https://www.techtoolsweb.com/youtube-downloader",
+        "https://www.techtoolsweb.com/youtube-downloader",
+        "https://www.techtoolsweb.com/youtube-downloader#!",
+        "https://www.techtoolsweb.com/youtube-downloader#!",
+        "https://www.techtoolsweb.com/website-speed-checker",
+        "https://www.techtoolsweb.com/website-speed-checker",
+        "https://www.techtoolsweb.com/website-speed-checker",
+        "https://www.techtoolsweb.com/website-speed-checker#!",
+        "https://www.techtoolsweb.com/website-speed-checker#!",
+        "https://www.techtoolsweb.com/website-speed-checker#!",
+        "https://www.techtoolsweb.com/website-speed-checker#mobile1",
+        "https://www.techtoolsweb.com/website-speed-checker#mobile1",
+        "https://www.techtoolsweb.com/website-speed-checker#mobile1",
+        "https://www.techtoolsweb.com/website-speed-checker#desktop1",
+        "https://www.techtoolsweb.com/website-speed-checker#desktop1",
+        "https://www.techtoolsweb.com/website-speed-checker#desktop1",
+        "https://www.techtoolsweb.com/website-rank-checker",
+        "https://www.techtoolsweb.com/website-rank-checker#!"
+      ],
+      "impact": "low",
+      "recommendation": "Add alt attributes to all images."
+    }
+  ],
+  "pageResults": [
+    {
+      "url": "https://www.techtoolsweb.com",
+      "title": "Tech tools web",
+      "metaDescription": "Online free tools like typing, seo, file converters, social media downloaders, dns, etc",
+      "h1Count": 1,
+      "wordCount": 61,
+      "statusCode": 200,
+      "loadTime": 0.64,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/",
+      "title": "Tech tools web",
+      "metaDescription": "Online free tools like typing, seo, file converters, social media downloaders, dns, etc",
+      "h1Count": 1,
+      "wordCount": 61,
+      "statusCode": 200,
+      "loadTime": 0.61,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/",
+      "title": "",
+      "metaDescription": "",
+      "h1Count": 0,
+      "wordCount": 0,
+      "statusCode": 0,
+      "loadTime": 0.64,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "error",
+          "title": "Page unreachable",
+          "description": "Request failed",
+          "impact": "high",
+          "recommendation": "Ensure the server is accessible."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-tamil",
+      "title": "English to Tamil Typing",
+      "metaDescription": "English to tamil typing is used to convert the word from english to tamil without changing the meaning, it is known as tamil typing using english",
+      "h1Count": 1,
+      "wordCount": 1161,
+      "statusCode": 200,
+      "loadTime": 0.82,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-hindi",
+      "title": "English to Hindi Typing",
+      "metaDescription": "English to hindi typing is used to convert the word from english to hindi without changing the meaning, it is known as hindi typing using english",
+      "h1Count": 1,
+      "wordCount": 1806,
+      "statusCode": 200,
+      "loadTime": 0.88,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-kannada",
+      "title": "English to Kannada Typing",
+      "metaDescription": "English to kannada typing is used to convert the word from english to kannada without changing the meaning, it is known as kannada typing using english",
+      "h1Count": 1,
+      "wordCount": 1161,
+      "statusCode": 200,
+      "loadTime": 0.83,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-telugu",
+      "title": "English to Telugu Typing",
+      "metaDescription": "English to telugu typing is used to convert the word from english to telugu without changing the meaning, it is known as telugu typing using english",
+      "h1Count": 1,
+      "wordCount": 1860,
+      "statusCode": 200,
+      "loadTime": 0.83,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-malayalam",
+      "title": "English to Malayalam Typing",
+      "metaDescription": "English to malayalam typing is used to convert the word from english to malayalam without changing the meaning, it is known as malayalam typing using english",
+      "h1Count": 1,
+      "wordCount": 1161,
+      "statusCode": 200,
+      "loadTime": 0.83,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing-speed-test",
+      "title": "Typing speed test - know your speed",
+      "metaDescription": "Typing speed test online to increase your typing potiential, use the tool and practice everyday to increase typing speed",
+      "h1Count": 1,
+      "wordCount": 339,
+      "statusCode": 200,
+      "loadTime": 0.61,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/diffchecker",
+      "title": "Diff checker online - Compare two versions",
+      "metaDescription": "Diffchecker is a free online tool that lets you compare difference between two text and Check for differences between versions easily.",
+      "h1Count": 1,
+      "wordCount": 219,
+      "statusCode": 200,
+      "loadTime": 0.6,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/diffchecker#!",
+      "title": "Diff checker online - Compare two versions",
+      "metaDescription": "Diffchecker is a free online tool that lets you compare difference between two text and Check for differences between versions easily.",
+      "h1Count": 1,
+      "wordCount": 219,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/remove-duplicates-from-list",
+      "title": "Remove duplicates lines from list",
+      "metaDescription": "remove duplicates lines from list online. Copy and paste the list and remove the duplicate lines. It is also called as duplicate remover",
+      "h1Count": 1,
+      "wordCount": 1116,
+      "statusCode": 200,
+      "loadTime": 1.41,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/remove-duplicates-from-list#!",
+      "title": "Remove duplicates lines from list",
+      "metaDescription": "remove duplicates lines from list online. Copy and paste the list and remove the duplicate lines. It is also called as duplicate remover",
+      "h1Count": 1,
+      "wordCount": 1116,
+      "statusCode": 200,
+      "loadTime": 0.66,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/keyboard-checker",
+      "title": "Keyboard checker - best keyboard tester online",
+      "metaDescription": "Best keyboard checker tool.. test all the keys in the keyword whether it is working or not. Easy to use online free tool",
+      "h1Count": 1,
+      "wordCount": 55,
+      "statusCode": 200,
+      "loadTime": 0.64,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/keyboard-checker#!",
+      "title": "Keyboard checker - best keyboard tester online",
+      "metaDescription": "Best keyboard checker tool.. test all the keys in the keyword whether it is working or not. Easy to use online free tool",
+      "h1Count": 1,
+      "wordCount": 55,
+      "statusCode": 200,
+      "loadTime": 0.64,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/html-unclosed-tag-checker",
+      "title": "html unclosed tag checker",
+      "metaDescription": "html unclosed tag finder is a easy online tool used to find which tag is unclosed with line number. You can easily find and add the close tag",
+      "h1Count": 1,
+      "wordCount": 88,
+      "statusCode": 200,
+      "loadTime": 0.64,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/html-unclosed-tag-checker#!",
+      "title": "html unclosed tag checker",
+      "metaDescription": "html unclosed tag finder is a easy online tool used to find which tag is unclosed with line number. You can easily find and add the close tag",
+      "h1Count": 1,
+      "wordCount": 88,
+      "statusCode": 200,
+      "loadTime": 0.64,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/domain-age-checker",
+      "title": "Domain Age checker - Check domain details",
+      "metaDescription": "domain age checker helps to find age of the domain and other details like nameserver, registerer, etc",
+      "h1Count": 1,
+      "wordCount": 1225,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/domain-age-checker#!",
+      "title": "Domain Age checker - Check domain details",
+      "metaDescription": "domain age checker helps to find age of the domain and other details like nameserver, registerer, etc",
+      "h1Count": 1,
+      "wordCount": 1225,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/xml-to-json",
+      "title": "XML to JSON converter - free online tool",
+      "metaDescription": "xml to json converter is a free online tool to convert xml string to json, can customize the indent before coping the content, format, download file",
+      "h1Count": 1,
+      "wordCount": 67,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/xml-to-json#!",
+      "title": "XML to JSON converter - free online tool",
+      "metaDescription": "xml to json converter is a free online tool to convert xml string to json, can customize the indent before coping the content, format, download file",
+      "h1Count": 1,
+      "wordCount": 67,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/youtube-downloader",
+      "title": "Youtube video/audio downloader",
+      "metaDescription": "Youtube video and audio downloader. Free and fast tool for youtube media downloading",
+      "h1Count": 1,
+      "wordCount": 85,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/youtube-downloader#!",
+      "title": "Youtube video/audio downloader",
+      "metaDescription": "Youtube video and audio downloader. Free and fast tool for youtube media downloading",
+      "h1Count": 1,
+      "wordCount": 85,
+      "statusCode": 200,
+      "loadTime": 0.61,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/website-speed-checker",
+      "title": "Website speed checker - check page speed",
+      "metaDescription": "Website speed checker helps to find the performance of the website's page. Page speed is most needed for seo to rank in top of google",
+      "h1Count": 1,
+      "wordCount": 116,
+      "statusCode": 200,
+      "loadTime": 0.61,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/website-speed-checker#!",
+      "title": "Website speed checker - check page speed",
+      "metaDescription": "Website speed checker helps to find the performance of the website's page. Page speed is most needed for seo to rank in top of google",
+      "h1Count": 1,
+      "wordCount": 116,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/website-speed-checker#mobile1",
+      "title": "Website speed checker - check page speed",
+      "metaDescription": "Website speed checker helps to find the performance of the website's page. Page speed is most needed for seo to rank in top of google",
+      "h1Count": 1,
+      "wordCount": 116,
+      "statusCode": 200,
+      "loadTime": 0.64,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/website-speed-checker#desktop1",
+      "title": "Website speed checker - check page speed",
+      "metaDescription": "Website speed checker helps to find the performance of the website's page. Page speed is most needed for seo to rank in top of google",
+      "h1Count": 1,
+      "wordCount": 116,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        },
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/plagiarism-checker",
+      "title": "Plagiarism checker online for free",
+      "metaDescription": "Detect plagiarism and ensure originality with our powerful plagiarism checker. Protect your content from duplication",
+      "h1Count": 1,
+      "wordCount": 73,
+      "statusCode": 200,
+      "loadTime": 0.66,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/plagiarism-checker#!",
+      "title": "Plagiarism checker online for free",
+      "metaDescription": "Detect plagiarism and ensure originality with our powerful plagiarism checker. Protect your content from duplication",
+      "h1Count": 1,
+      "wordCount": 73,
+      "statusCode": 200,
+      "loadTime": 0.65,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/website-rank-checker",
+      "title": "Keyword Rank Checker - tech tools web",
+      "metaDescription": "Website rank checker helps to find the rank of the website's page listing for the given keyword. easy online tool to find the rank of the website on country basis",
+      "h1Count": 1,
+      "wordCount": 121,
+      "statusCode": 200,
+      "loadTime": 0.61,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/website-rank-checker#!",
+      "title": "Keyword Rank Checker - tech tools web",
+      "metaDescription": "Website rank checker helps to find the rank of the website's page listing for the given keyword. easy online tool to find the rank of the website on country basis",
+      "h1Count": 1,
+      "wordCount": 121,
+      "statusCode": 200,
+      "loadTime": 0.61,
+      "mobileResponsive": false,
+      "issues": [
+        {
+          "type": "info",
+          "title": "Missing image alt text",
+          "description": "One or more images lack alt text",
+          "impact": "low",
+          "recommendation": "Add alt attributes to all images."
+        }
+      ]
+    },
+    {
+      "url": "https://www.techtoolsweb.com/term-of-services",
+      "title": "Terms of Services - techtoolsweb.com",
+      "metaDescription": "This is terms of services of techtoolsweb.com",
+      "h1Count": 1,
+      "wordCount": 333,
+      "statusCode": 200,
+      "loadTime": 0.61,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/term-of-services#!",
+      "title": "Terms of Services - techtoolsweb.com",
+      "metaDescription": "This is terms of services of techtoolsweb.com",
+      "h1Count": 1,
+      "wordCount": 333,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/privacy-policy",
+      "title": "Privacy Policy - techtoolsweb.com",
+      "metaDescription": "This is privacy policy of techtoolsweb.com",
+      "h1Count": 1,
+      "wordCount": 389,
+      "statusCode": 200,
+      "loadTime": 0.61,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/privacy-policy#!",
+      "title": "Privacy Policy - techtoolsweb.com",
+      "metaDescription": "This is privacy policy of techtoolsweb.com",
+      "h1Count": 1,
+      "wordCount": 389,
+      "statusCode": 200,
+      "loadTime": 0.64,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing-speed-test#!",
+      "title": "Typing speed test - know your speed",
+      "metaDescription": "Typing speed test online to increase your typing potiential, use the tool and practice everyday to increase typing speed",
+      "h1Count": 1,
+      "wordCount": 339,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-malayalam#!",
+      "title": "English to Malayalam Typing",
+      "metaDescription": "English to malayalam typing is used to convert the word from english to malayalam without changing the meaning, it is known as malayalam typing using english",
+      "h1Count": 1,
+      "wordCount": 1161,
+      "statusCode": 200,
+      "loadTime": 0.84,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-telugu#!",
+      "title": "English to Telugu Typing",
+      "metaDescription": "English to telugu typing is used to convert the word from english to telugu without changing the meaning, it is known as telugu typing using english",
+      "h1Count": 1,
+      "wordCount": 1860,
+      "statusCode": 200,
+      "loadTime": 0.84,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-kannada#!",
+      "title": "English to Kannada Typing",
+      "metaDescription": "English to kannada typing is used to convert the word from english to kannada without changing the meaning, it is known as kannada typing using english",
+      "h1Count": 1,
+      "wordCount": 1161,
+      "statusCode": 200,
+      "loadTime": 0.81,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-hindi#!",
+      "title": "English to Hindi Typing",
+      "metaDescription": "English to hindi typing is used to convert the word from english to hindi without changing the meaning, it is known as hindi typing using english",
+      "h1Count": 1,
+      "wordCount": 1806,
+      "statusCode": 200,
+      "loadTime": 0.81,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/typing/english-to-tamil#!",
+      "title": "English to Tamil Typing",
+      "metaDescription": "English to tamil typing is used to convert the word from english to tamil without changing the meaning, it is known as tamil typing using english",
+      "h1Count": 1,
+      "wordCount": 1161,
+      "statusCode": 200,
+      "loadTime": 0.81,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com/#!",
+      "title": "Tech tools web",
+      "metaDescription": "Online free tools like typing, seo, file converters, social media downloaders, dns, etc",
+      "h1Count": 1,
+      "wordCount": 61,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": []
+    },
+    {
+      "url": "https://www.techtoolsweb.com#!",
+      "title": "Tech tools web",
+      "metaDescription": "Online free tools like typing, seo, file converters, social media downloaders, dns, etc",
+      "h1Count": 1,
+      "wordCount": 61,
+      "statusCode": 200,
+      "loadTime": 0.63,
+      "mobileResponsive": false,
+      "issues": []
+    }
+  ],
+  "crawlDate": "2025-05-25T05:41:57.413587"
+}
