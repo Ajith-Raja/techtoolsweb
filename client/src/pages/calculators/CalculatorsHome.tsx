@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Percent, CreditCard, BarChart4, ArrowUpDown, PiggyBank, Clock, Timer, Calendar, Cake } from "lucide-react";
+import { Percent, CreditCard, BarChart4, ArrowUpDown, PiggyBank, Clock, Timer, Calendar, Cake, Shield, HeartPulse, Car, Home } from "lucide-react";
 
 interface CalculatorItem {
   title: string;
@@ -76,6 +76,30 @@ export default function CalculatorsHome() {
       description: "Calculate exact age in years, months, days, hours, minutes and seconds",
       icon: <Cake className="h-6 w-6" />,
       href: "/calculators/birthday-calculator"
+    },
+    {
+      title: "Term Life Insurance Calculator",
+      description: "Human Life Value method — cover needed and premium range with provider links",
+      icon: <Shield className="h-6 w-6" />,
+      href: "/calculators/term-life-insurance"
+    },
+    {
+      title: "Health Insurance Premium Estimator",
+      description: "Estimate premium band and recommended sum insured by age, city, and family size",
+      icon: <HeartPulse className="h-6 w-6" />,
+      href: "/calculators/health-insurance"
+    },
+    {
+      title: "Car Insurance Premium Calculator",
+      description: "IDV, third-party tariff, and comprehensive premium with NCB discount",
+      icon: <Car className="h-6 w-6" />,
+      href: "/calculators/car-insurance"
+    },
+    {
+      title: "Home Loan Insurance Calculator",
+      description: "Compare HLPP vs standalone term plan and see potential savings",
+      icon: <Home className="h-6 w-6" />,
+      href: "/calculators/home-loan-insurance"
     }
   ];
 

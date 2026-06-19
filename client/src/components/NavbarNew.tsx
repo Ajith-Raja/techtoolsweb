@@ -35,6 +35,7 @@ import {
   FileOutput,
   FileInput,
   Youtube,
+  Instagram,
   Calculator,
   DollarSign,
   ArrowLeftRight,
@@ -55,6 +56,10 @@ import {
   Code,
   FileJson,
   FileCode,
+  Shield,
+  HeartPulse,
+  Car,
+  Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -140,7 +145,7 @@ export function Navbar() {
       name: "Content Gap Analyzer",
       href: "/content-gap-analyzer",
       icon: <LineChart className="mr-2 h-4 w-4" />,
-      premium: true,
+      //premium: true,
     },
   ];
   
@@ -200,24 +205,50 @@ export function Navbar() {
       href: "/calculators/birthday-calculator",
       icon: <Calendar className="mr-2 h-4 w-4" />,
     },
+    {
+      name: "Term Life Insurance",
+      href: "/calculators/term-life-insurance",
+      icon: <Shield className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Health Insurance",
+      href: "/calculators/health-insurance",
+      icon: <HeartPulse className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Car Insurance",
+      href: "/calculators/car-insurance",
+      icon: <Car className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Home Loan Insurance",
+      href: "/calculators/home-loan-insurance",
+      icon: <Home className="mr-2 h-4 w-4" />,
+    },
   ];
   
   const otherToolsNavigation: NavItem[] = [
+    {
+      name: "Internet Speed Test",
+      href: "/speed-test",
+      icon: <Gauge className="mr-2 h-4 w-4" />,
+    },
     {
       name: "QR Code Generator",
       href: "/qr-code-generator",
       icon: <QrCode className="mr-2 h-4 w-4" />,
     },
+
     {
       name: "Diff Checker",
       href: "/diff-checker",
       icon: <GitCompare className="mr-2 h-4 w-4" />,
     },
-    {
-      name: "Transliterate",
-      href: "/transliterate",
-      icon: <Languages className="mr-2 h-4 w-4" />,
-    },
+    // {
+    //   name: "Transliterate",
+    //   href: "/transliterate",
+    //   icon: <Languages className="mr-2 h-4 w-4" />,
+    // },
     {
       name: "API Tester",
       href: "/api-tester",
@@ -227,6 +258,11 @@ export function Navbar() {
       name: "YouTube Downloader",
       href: "/youtube-downloader",
       icon: <Youtube className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Instagram Downloader",
+      href: "/instagram-downloader",
+      icon: <Instagram className="mr-2 h-4 w-4" />,
     },
     {
       name: "Regex Tester",

@@ -52,11 +52,15 @@ const ReorderPdf = lazy(() => import("./pages/pdf-tools/ReorderPdf"));
 const ExtractText = lazy(() => import("./pages/pdf-tools/ExtractText"));
 const ExtractImages = lazy(() => import("./pages/pdf-tools/ExtractImages"));
 const WordToPdf = lazy(() => import("./pages/pdf-tools/WordToPdf"));
+const PdfChat = lazy(() => import("./pages/pdf-tools/PdfChat"));
 const YoutubeDownloader = lazy(() => import("./pages/YoutubeDownloader"));
+const InstagramDownloader = lazy(() => import("./pages/InstagramDownloader"));
 const QRCodeGenerator = lazy(() => import("./pages/QRCodeGenerator"));
 const RegexTester = lazy(() => import("./pages/RegexTester"));
 const ImageToSvgConverter = lazy(() => import("./pages/ImageToSvgConverter"));
 const CalendarGenerator = lazy(() => import("./pages/CalendarGenerator"));
+const SpeedTest = lazy(() => import("./pages/SpeedTest"));
+
 
 // Calculator pages
 const CalculatorsHome = lazy(() => import("./pages/calculators/CalculatorsHome"));
@@ -71,6 +75,10 @@ const IncomeTaxCalculator = lazy(() => import("./pages/calculators/IncomeTaxCalc
 const TimezoneConverter = lazy(() => import("./pages/calculators/TimezoneConverter"));
 const UnixTimestampConverter = lazy(() => import("./pages/calculators/UnixTimestampConverter"));
 const BirthdayCalculator = lazy(() => import("./pages/calculators/BirthdayCalculator"));
+const TermLifeInsuranceCalculator = lazy(() => import("./pages/calculators/TermLifeInsuranceCalculator"));
+const HealthInsuranceCalculator = lazy(() => import("./pages/calculators/HealthInsuranceCalculator"));
+const CarInsuranceCalculator = lazy(() => import("./pages/calculators/CarInsuranceCalculator"));
+const HomeLoanInsuranceCalculator = lazy(() => import("./pages/calculators/HomeLoanInsuranceCalculator"));
 
 // Developer Tools pages
 const ResponsiveTableGenerator = lazy(() => import("./pages/dev-tools/ResponsiveTableGenerator"));
@@ -153,14 +161,17 @@ function Router() {
           <LazyRoute path="/diff-checker" component={DiffChecker} />
           <LazyRoute path="/api-tester" component={ApiTester} />
           <LazyRoute path="/youtube-downloader" component={YoutubeDownloader} />
+          <LazyRoute path="/instagram-downloader" component={InstagramDownloader} />
           <LazyRoute path="/qr-code-generator" component={QRCodeGenerator} />
           <LazyRoute path="/regex-tester" component={RegexTester} />
           <LazyRoute path="/image-to-svg" component={ImageToSvgConverter} />
           <LazyRoute path="/calendar-generator" component={CalendarGenerator} />
+          <LazyRoute path="/speed-test" component={SpeedTest} />
+
           
           {/* Premium features - requires authentication */}
-          <LazyProtectedRoute path="/pre-launch-audit" component={PreLaunchAudit} />
-          <LazyProtectedRoute path="/content-gap-analyzer" component={ContentGapAnalyzer} />
+          <LazyRoute path="/pre-launch-audit" component={PreLaunchAudit} />
+          <LazyRoute path="/content-gap-analyzer" component={ContentGapAnalyzer} />
           <LazyProtectedRoute path="/history" component={AnalysisHistory} />
           
           {/* PDF Tools routes */}
@@ -180,6 +191,7 @@ function Router() {
           <LazyRoute path="/pdf-tools/watermark" component={WatermarkPdf} />
           <LazyRoute path="/pdf-tools/metadata" component={EditMetadata} />
           <LazyRoute path="/pdf-tools/remove-pages" component={RemovePages} />
+          <LazyRoute path="/pdf-tools/chat" component={PdfChat} />
           
           {/* Calculator routes */}
           <LazyRoute path="/calculators" component={CalculatorsHome} />
@@ -194,6 +206,10 @@ function Router() {
           <LazyRoute path="/calculators/timezone-converter" component={TimezoneConverter} />
           <LazyRoute path="/calculators/unix-timestamp-converter" component={UnixTimestampConverter} />
           <LazyRoute path="/calculators/birthday-calculator" component={BirthdayCalculator} />
+          <LazyRoute path="/calculators/term-life-insurance" component={TermLifeInsuranceCalculator} />
+          <LazyRoute path="/calculators/health-insurance" component={HealthInsuranceCalculator} />
+          <LazyRoute path="/calculators/car-insurance" component={CarInsuranceCalculator} />
+          <LazyRoute path="/calculators/home-loan-insurance" component={HomeLoanInsuranceCalculator} />
           
           {/* Developer Tools routes */}
           <LazyRoute path="/dev-tools/table-generator" component={ResponsiveTableGenerator} />
