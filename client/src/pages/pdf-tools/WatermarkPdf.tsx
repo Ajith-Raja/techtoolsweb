@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { addWatermark, checkTaskStatus, getDownloadUrl, PdfProgress, usePdfProgress } from '@/lib/pdfService';
+import * as pdfjsLib from 'pdfjs-dist';
 
 export default function WatermarkPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -25,12 +27,260 @@ export default function WatermarkPdf() {
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<boolean>(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [watermarkPreviewUrl, setWatermarkPreviewUrl] = useState<string | null>(null);
+  const [previewPageSize, setPreviewPageSize] = useState<{ width: number; height: number } | null>(null);
+  const [watermarkDrawSize, setWatermarkDrawSize] = useState<{ width: number; height: number } | null>(null);
   const { toast } = useToast();
+
+  const rotationValue = useMemo(() => {
+    if (rotation === 'none') return 0;
+    if (rotation === 'horizontal') return 90;
+    return 45;
+  }, [rotation]);
+
+  const watermarkOpacity = opacity / 100;
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(imageFile);
+    setImagePreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [imageFile]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const renderWatermarkPreview = async () => {
+      if (!file) {
+        setWatermarkPreviewUrl(null);
+        setWatermarkDrawSize(null);
+        return;
+      }
+
+      const opacityValue = Math.max(0, Math.min(1, watermarkOpacity));
+
+      try {
+        if (watermarkType === 'image') {
+          if (!imagePreviewUrl) {
+            setWatermarkPreviewUrl(null);
+            return;
+          }
+
+          const image = new Image();
+          image.src = imagePreviewUrl;
+          await new Promise<void>((resolve, reject) => {
+            image.onload = () => resolve();
+            image.onerror = () => reject(new Error('Failed to load watermark image preview'));
+          });
+
+          const pageWidth = previewPageSize?.width ?? 595;
+          const drawWidth = Math.max(24, pageWidth * Math.max(0.05, Math.min(0.25, 0.25)));
+          const scale = drawWidth / image.width;
+          const rawWidth = Math.max(24, image.width * scale);
+          const rawHeight = Math.max(24, image.height * scale);
+
+          const rotatedCanvas = document.createElement('canvas');
+          const rotatedContext = rotatedCanvas.getContext('2d');
+          if (!rotatedContext) return;
+
+          const radians = (rotationValue * Math.PI) / 180;
+          const sin = Math.abs(Math.sin(radians));
+          const cos = Math.abs(Math.cos(radians));
+          rotatedCanvas.width = Math.ceil(rawWidth * cos + rawHeight * sin) + 4;
+          rotatedCanvas.height = Math.ceil(rawWidth * sin + rawHeight * cos) + 4;
+
+          rotatedContext.clearRect(0, 0, rotatedCanvas.width, rotatedCanvas.height);
+          rotatedContext.globalAlpha = opacityValue;
+          rotatedContext.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+          rotatedContext.rotate(radians);
+          rotatedContext.drawImage(image, -rawWidth / 2, -rawHeight / 2, rawWidth, rawHeight);
+
+          if (!isActive) return;
+          setWatermarkPreviewUrl(rotatedCanvas.toDataURL('image/png'));
+          setWatermarkDrawSize({ width: rawWidth, height: rawHeight });
+          return;
+        }
+
+        const text = watermarkText || '';
+        const fontPx = Math.max(8, parseInt(fontSize, 10));
+        const scratch = document.createElement('canvas');
+        const scratchContext = scratch.getContext('2d');
+        if (!scratchContext) return;
+
+        scratchContext.font = `bold ${fontPx}px Arial, sans-serif`;
+        const measuredWidth = Math.max(1, Math.ceil(scratchContext.measureText(text).width));
+        const textCanvas = document.createElement('canvas');
+        const textContext = textCanvas.getContext('2d');
+        if (!textContext) return;
+
+        const padding = 20;
+        textCanvas.width = measuredWidth + padding * 2;
+        textCanvas.height = Math.ceil(fontPx * 1.6) + padding * 2;
+        textContext.clearRect(0, 0, textCanvas.width, textCanvas.height);
+        textContext.font = `bold ${fontPx}px Arial, sans-serif`;
+        textContext.textBaseline = 'middle';
+        textContext.fillStyle = fontColor;
+        textContext.globalAlpha = opacityValue;
+        textContext.fillText(text, padding, textCanvas.height / 2);
+
+        const rotatedCanvas = document.createElement('canvas');
+        const rotatedContext = rotatedCanvas.getContext('2d');
+        if (!rotatedContext) return;
+
+        const radians = (rotationValue * Math.PI) / 180;
+        const sin = Math.abs(Math.sin(radians));
+        const cos = Math.abs(Math.cos(radians));
+        rotatedCanvas.width = Math.ceil(textCanvas.width * cos + textCanvas.height * sin) + 4;
+        rotatedCanvas.height = Math.ceil(textCanvas.width * sin + textCanvas.height * cos) + 4;
+
+        rotatedContext.clearRect(0, 0, rotatedCanvas.width, rotatedCanvas.height);
+        rotatedContext.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+        rotatedContext.rotate(radians);
+        rotatedContext.drawImage(textCanvas, -textCanvas.width / 2, -textCanvas.height / 2);
+
+        if (!isActive) return;
+        setWatermarkPreviewUrl(rotatedCanvas.toDataURL('image/png'));
+        setWatermarkDrawSize({ width: textCanvas.width, height: textCanvas.height });
+      } catch {
+        if (!isActive) return;
+        setWatermarkPreviewUrl(null);
+        setWatermarkDrawSize(null);
+      }
+    };
+
+    renderWatermarkPreview();
+
+    return () => {
+      isActive = false;
+    };
+  }, [file, watermarkType, watermarkText, imagePreviewUrl, opacity, rotation, fontSize, fontColor, position, rotationValue, watermarkOpacity, previewPageSize]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const renderPreview = async () => {
+      if (!file) {
+        setPreviewUrl(null);
+        setPreviewPageSize(null);
+        setPreviewError(null);
+        setPreviewLoading(false);
+        return;
+      }
+
+      setPreviewLoading(true);
+      setPreviewError(null);
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: buffer });
+        const pdfDocument = await loadingTask.promise;
+        const page = await pdfDocument.getPage(1);
+        const baseViewport = page.getViewport({ scale: 1 });
+        const scale = Math.min(1.6, 900 / baseViewport.width);
+        const viewport = page.getViewport({ scale });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+          throw new Error('Unable to render preview canvas');
+        }
+
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+
+        await page.render({
+          canvasContext: context,
+          viewport,
+          canvas,
+        }).promise;
+
+        if (!isActive) return;
+        setPreviewUrl(canvas.toDataURL('image/png'));
+        setPreviewPageSize({ width: baseViewport.width, height: baseViewport.height });
+      } catch (previewErr) {
+        if (!isActive) return;
+        setPreviewUrl(null);
+        setPreviewPageSize(null);
+        setPreviewError(previewErr instanceof Error ? previewErr.message : 'Failed to render preview');
+      } finally {
+        if (isActive) setPreviewLoading(false);
+      }
+    };
+
+    renderPreview();
+
+    return () => {
+      isActive = false;
+    };
+  }, [file]);
+
+  usePdfProgress(taskId, (progressData: PdfProgress) => {
+    setProgress(progressData.progress);
+
+    if (progressData.status === 'processing') {
+      return;
+    }
+
+    if (progressData.status === 'success' || progressData.status === 'completed') {
+      setProgress(100);
+      setProcessing(false);
+      setCompleted(true);
+
+      const completedTaskId = progressData.task_id || taskId;
+      if (completedTaskId) {
+        checkTaskStatus(completedTaskId)
+          .then(result => {
+            if (result.download_url) {
+              setDownloadUrl(result.download_url);
+            } else {
+              setDownloadUrl(getDownloadUrl(completedTaskId));
+            }
+          })
+          .catch(() => {
+            if (completedTaskId) {
+              setDownloadUrl(getDownloadUrl(completedTaskId));
+            }
+          });
+      }
+
+      toast({
+        title: 'Watermark Added Successfully',
+        description: 'Your watermarked PDF is ready to download.',
+      });
+      return;
+    }
+
+    if (progressData.status === 'error') {
+      setProcessing(false);
+      setError(progressData.error || 'An error occurred while adding the watermark');
+      toast({
+        title: 'Watermark Failed',
+        description: progressData.error || 'An error occurred while adding the watermark',
+        variant: 'destructive',
+      });
+    }
+  });
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
   };
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,11 +311,15 @@ export default function WatermarkPdf() {
 
   const resetForm = () => {
     setFile(null);
+    setImageFile(null);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
   };
 
-  const handleWatermark = () => {
+  const handleWatermark = async () => {
     if (!file) return;
     
     if (watermarkType === "text" && !watermarkText.trim()) {
@@ -87,28 +341,76 @@ export default function WatermarkPdf() {
     }
     
     setProcessing(true);
-    
-    // Simulate processing
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
-      
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        toast({
-          title: 'Watermark Added Successfully',
-          description: 'Your watermarked PDF is ready to download.',
-        });
-      }
-    }, 300);
+    setError(null);
+    setProgress(0);
+
+    try {
+      const newTaskId = await addWatermark(file, {
+        watermarkType: watermarkType as 'text' | 'image',
+        watermarkText,
+        watermarkImage: imageFile,
+        position: position as 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'tile',
+        opacity: watermarkOpacity,
+        rotation: rotationValue,
+        fontSize: parseInt(fontSize, 10),
+        fontColor,
+        imageScale: 0.25,
+      });
+      setTaskId(newTaskId);
+    } catch (err) {
+      setProcessing(false);
+      const message = (err as Error).message || 'Failed to add watermark';
+      setError(message);
+      toast({
+        title: 'Watermark Failed',
+        description: message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleOpacityChange = (value: number[]) => {
     setOpacity(value[0]);
   };
+
+  const handleDownload = () => {
+    if (!completed) {
+      toast({
+        title: 'Download unavailable',
+        description: 'Please apply the watermark before downloading.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const url = downloadUrl || (taskId ? getDownloadUrl(taskId) : '');
+    if (!url) {
+      toast({
+        title: 'Download unavailable',
+        description: 'The watermarked PDF is not ready yet.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    window.open(url, '_blank');
+  };
+
+  const previewOverlayClassName = useMemo(() => {
+    if (position === 'top-left') return 'left-[6%] top-[6%]';
+    if (position === 'top-right') return 'right-[6%] top-[6%]';
+    if (position === 'bottom-left') return 'left-[6%] bottom-[6%]';
+    if (position === 'bottom-right') return 'right-[6%] bottom-[6%]';
+    return 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
+  }, [position]);
+
+  const previewWatermarkWidth = useMemo(() => {
+    const pageWidth = previewPageSize?.width ?? 595;
+    const drawWidth = watermarkDrawSize?.width ?? (watermarkType === 'image' ? pageWidth * 0.25 : 200);
+    return `${Math.max(5, Math.min(95, (drawWidth / pageWidth) * 100))}%`;
+  }, [previewPageSize, watermarkDrawSize, watermarkType]);
+
+  const previewTileRepeat = position === 'tile';
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -134,6 +436,81 @@ export default function WatermarkPdf() {
             
             {file && (
               <div className="space-y-6">
+                <div className="rounded-xl border bg-muted/20 p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-sm font-medium">Live Preview</p>
+                      <p className="text-xs text-muted-foreground">
+                        This is the first page of the PDF with your current watermark settings applied.
+                      </p>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Confirm with <span className="font-medium text-foreground">Add Watermark</span> when it looks right.
+                    </div>
+                  </div>
+
+                  <div className="relative overflow-hidden rounded-lg border bg-background">
+                    {previewLoading ? (
+                      <div className="flex min-h-[420px] items-center justify-center text-sm text-muted-foreground">
+                        Rendering preview...
+                      </div>
+                    ) : previewError ? (
+                      <div className="flex min-h-[420px] items-center justify-center p-6 text-center text-sm text-destructive">
+                        {previewError}
+                      </div>
+                    ) : previewUrl ? (
+                      <div className="relative mx-auto w-full max-w-[820px]">
+                        <img
+                          src={previewUrl}
+                          alt="PDF preview"
+                          className="block h-auto w-full"
+                        />
+
+                        {previewTileRepeat ? (
+                          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                            {watermarkPreviewUrl ? Array.from({ length: 12 }).map((_, index) => (
+                              <img
+                                key={index}
+                                src={watermarkPreviewUrl}
+                                alt="Watermark preview repeat"
+                                className="absolute select-none"
+                                style={{
+                                  width: previewWatermarkWidth,
+                                  left: `${(index % 4) * 25 + 8}%`,
+                                  top: `${Math.floor(index / 4) * 28 + 8}%`,
+                                  opacity: 1,
+                                }}
+                              />
+                            )) : null}
+                          </div>
+                        ) : (
+                          <div className={`pointer-events-none absolute ${previewOverlayClassName}`}>
+                            {watermarkPreviewUrl ? (
+                              <img
+                                src={watermarkPreviewUrl}
+                                alt="Watermark preview"
+                                className="select-none shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
+                                style={{
+                                  width: previewWatermarkWidth,
+                                  opacity: 1,
+                                }}
+                              />
+                            ) : (
+                              <div className="rounded-md bg-muted/80 px-3 py-2 text-xs text-muted-foreground">
+                                Upload a watermark image to preview it here.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex min-h-[420px] items-center justify-center p-6 text-center text-sm text-muted-foreground">
+                        Upload a PDF to see a live watermark preview.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <Tabs defaultValue="text" onValueChange={setWatermarkType} value={watermarkType}>
                   <TabsList className="grid grid-cols-2 w-full">
                     <TabsTrigger value="text">Text Watermark</TabsTrigger>
@@ -317,6 +694,12 @@ export default function WatermarkPdf() {
                     <Progress value={progress} className="h-2" />
                   </div>
                 )}
+
+                {error && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -347,6 +730,7 @@ export default function WatermarkPdf() {
               <Button
                 variant="default"
                 className="w-full sm:w-auto"
+                onClick={handleDownload}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Watermarked PDF

@@ -60,6 +60,8 @@ import {
   HeartPulse,
   Car,
   Home,
+  Flame,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -129,11 +131,6 @@ export function Navbar() {
       name: "Font Generator",
       href: "/font-generator",
       icon: <Type className="mr-2 h-4 w-4" />,
-    },
-    {
-      name: "Image Compressor",
-      href: "/image-compressor",
-      icon: <Image className="mr-2 h-4 w-4" />,
     },
     {
       name: "Pre-Launch Audit",
@@ -225,25 +222,44 @@ export function Navbar() {
       href: "/calculators/home-loan-insurance",
       icon: <Home className="mr-2 h-4 w-4" />,
     },
+    {
+      name: "Rent Agreement Generator",
+      href: "/calculators/rent-agreement",
+      icon: <FileText className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Calorie Deficit Calculator",
+      href: "/calculators/calorie-deficit",
+      icon: <Flame className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "ROI Calculator",
+      href: "/calculators/roi",
+      icon: <TrendingUp className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Legal Notice Generator",
+      href: "/calculators/legal-notice",
+      icon: <Scale className="mr-2 h-4 w-4" />,
+    },
   ];
   
   const otherToolsNavigation: NavItem[] = [
-    {
-      name: "Internet Speed Test",
-      href: "/speed-test",
-      icon: <Gauge className="mr-2 h-4 w-4" />,
-    },
+    // {
+    //   name: "Internet Speed Test",
+    //   href: "/speed-test",
+    //   icon: <Gauge className="mr-2 h-4 w-4" />,
+    // },
     {
       name: "QR Code Generator",
       href: "/qr-code-generator",
       icon: <QrCode className="mr-2 h-4 w-4" />,
     },
-
-    {
-      name: "Diff Checker",
-      href: "/diff-checker",
-      icon: <GitCompare className="mr-2 h-4 w-4" />,
-    },
+    // {
+    //   name: "Diff Checker",
+    //   href: "/diff-checker",
+    //   icon: <GitCompare className="mr-2 h-4 w-4" />,
+    // },
     // {
     //   name: "Transliterate",
     //   href: "/transliterate",
@@ -259,11 +275,11 @@ export function Navbar() {
       href: "/youtube-downloader",
       icon: <Youtube className="mr-2 h-4 w-4" />,
     },
-    {
-      name: "Instagram Downloader",
-      href: "/instagram-downloader",
-      icon: <Instagram className="mr-2 h-4 w-4" />,
-    },
+    // {
+    //   name: "Instagram Downloader",
+    //   href: "/instagram-downloader",
+    //   icon: <Instagram className="mr-2 h-4 w-4" />,
+    // },
     {
       name: "Regex Tester",
       href: "/regex-tester",
@@ -274,11 +290,16 @@ export function Navbar() {
       href: "/image-to-svg",
       icon: <FileImage className="mr-2 h-4 w-4" />,
     },
+    // {
+    //   name: "Calendar Generator",
+    //   href: "/calendar-generator",
+    //   icon: <Calendar className="mr-2 h-4 w-4" />,
+    // },
     {
-      name: "Calendar Generator",
-      href: "/calendar-generator",
-      icon: <Calendar className="mr-2 h-4 w-4" />,
-    }
+      name: "Image Compressor",
+      href: "/image-compressor",
+      icon: <Image className="mr-2 h-4 w-4" />,
+    },
   ];
 
   const developerToolsNavigation: NavItem[] = [
@@ -436,7 +457,7 @@ export function Navbar() {
           <div className="flex items-center">
             <a href="/">
               <span className="text-2xl font-bold text-primary cursor-pointer">
-                SEO Analyzer
+                Tech Tools
               </span>
             </a>
           </div>
@@ -462,7 +483,7 @@ export function Navbar() {
               ))}
 
               {/* SEO Tools Dropdown */}
-              <DropdownMenu>
+              {/* <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -479,7 +500,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2">
                   {toolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <a
@@ -500,7 +521,7 @@ export function Navbar() {
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
-              </DropdownMenu>
+              </DropdownMenu> */}
 
               {/* Calculators Dropdown */}
               <DropdownMenu>
@@ -520,7 +541,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2 max-h-[calc(100vh-100px)] overflow-y-auto">
                   {calculatorsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <a
@@ -556,7 +577,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2 max-h-[calc(100vh-100px)] overflow-y-auto">
                   {pdfToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <a
@@ -592,7 +613,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2">
                   {otherToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <a
@@ -628,7 +649,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2">
                   {developerToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <a

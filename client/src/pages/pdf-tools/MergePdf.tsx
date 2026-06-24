@@ -28,7 +28,7 @@ export default function MergePdf() {
   usePdfProgress(taskId, (progressData: PdfProgress) => {
     if (progressData.status === 'processing') {
       setProgress(progressData.progress);
-    } else if (progressData.status === 'success') {
+    } else if (progressData.status === 'success' || progressData.status === 'completed') {
       setProgress(100);
       setProcessing(false);
       setCompleted(true);
@@ -36,6 +36,8 @@ export default function MergePdf() {
         .then(result => {
           if (result.download_url) {
             setDownloadUrl(result.download_url);
+          } else if (taskId) {
+            setDownloadUrl(getDownloadUrl(taskId));
           }
         })
         .catch(console.error);

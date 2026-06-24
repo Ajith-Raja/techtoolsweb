@@ -79,6 +79,10 @@ const TermLifeInsuranceCalculator = lazy(() => import("./pages/calculators/TermL
 const HealthInsuranceCalculator = lazy(() => import("./pages/calculators/HealthInsuranceCalculator"));
 const CarInsuranceCalculator = lazy(() => import("./pages/calculators/CarInsuranceCalculator"));
 const HomeLoanInsuranceCalculator = lazy(() => import("./pages/calculators/HomeLoanInsuranceCalculator"));
+const RentAgreementGenerator = lazy(() => import("./pages/calculators/RentAgreementGenerator"));
+const CalorieDeficitCalculator = lazy(() => import("./pages/calculators/CalorieDeficitCalculator"));
+const RoiCalculator = lazy(() => import("./pages/calculators/RoiCalculator"));
+const LegalNoticeGenerator = lazy(() => import("./pages/calculators/LegalNoticeGenerator"));
 
 // Developer Tools pages
 const ResponsiveTableGenerator = lazy(() => import("./pages/dev-tools/ResponsiveTableGenerator"));
@@ -210,6 +214,10 @@ function Router() {
           <LazyRoute path="/calculators/health-insurance" component={HealthInsuranceCalculator} />
           <LazyRoute path="/calculators/car-insurance" component={CarInsuranceCalculator} />
           <LazyRoute path="/calculators/home-loan-insurance" component={HomeLoanInsuranceCalculator} />
+          <LazyRoute path="/calculators/rent-agreement" component={RentAgreementGenerator} />
+          <LazyRoute path="/calculators/calorie-deficit" component={CalorieDeficitCalculator} />
+          <LazyRoute path="/calculators/roi" component={RoiCalculator} />
+          <LazyRoute path="/calculators/legal-notice" component={LegalNoticeGenerator} />
           
           {/* Developer Tools routes */}
           <LazyRoute path="/dev-tools/table-generator" component={ResponsiveTableGenerator} />

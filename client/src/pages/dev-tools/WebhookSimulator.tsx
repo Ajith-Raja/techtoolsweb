@@ -139,21 +139,12 @@ export default function WebhookSimulator() {
   const [url, setUrl] = useState<string>("");
   const [method, setMethod] = useState<string>("POST");
   const [template, setTemplate] = useState<string>("custom");
-  const [payload, setPayload] = useState<string>(`{
-  "event": "example_event",
-  "timestamp": "${new Date().toISOString()}",
-  "data": {
-    "id": "12345",
-    "status": "completed"
-  }
-}`);
+  const [payload, setPayload] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [headerFields, setHeaderFields] = useState<HeaderField[]>([
-    { key: "Content-Type", value: "application/json" }
-  ]);
+  const [headerFields, setHeaderFields] = useState<HeaderField[]>([]);
   const [history, setHistory] = useState<WebhookRequest[]>([]);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<WebhookRequest | null>(null);
-  const [includeTimestamp, setIncludeTimestamp] = useState<boolean>(true);
+  const [includeTimestamp, setIncludeTimestamp] = useState<boolean>(false);
 
   // Update payload when template changes
   useEffect(() => {
@@ -193,6 +184,15 @@ export default function WebhookSimulator() {
 
   // Format and validate JSON payload
   const formatJson = () => {
+    if (!payload.trim()) {
+      toast({
+        title: "Nothing to format",
+        description: "Enter a JSON payload first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const parsed = JSON.parse(payload);
       
@@ -219,7 +219,7 @@ export default function WebhookSimulator() {
 
   // Send webhook request
   const sendWebhook = async () => {
-    if (!url) {
+    if (!url.trim()) {
       toast({
         title: "URL Required",
         description: "Please enter a target URL for your webhook",
@@ -228,9 +228,38 @@ export default function WebhookSimulator() {
       return;
     }
 
+    const normalizedUrl = (() => {
+      const raw = url.trim();
+      try {
+        return new URL(raw).toString();
+      } catch {
+        try {
+          return new URL(`https://${raw}`).toString();
+        } catch {
+          return "";
+        }
+      }
+    })();
+
+    if (!normalizedUrl) {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid URL (e.g. https://example.com/webhook)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let requestPayload = payload;
     try {
-      // Validate JSON
-      JSON.parse(payload);
+      if (payload.trim()) {
+        const parsed = JSON.parse(payload);
+        if (includeTimestamp && !parsed.timestamp) {
+          parsed.timestamp = new Date().toISOString();
+          requestPayload = JSON.stringify(parsed, null, 2);
+          setPayload(requestPayload);
+        }
+      }
     } catch (error) {
       toast({
         title: "Invalid JSON",
@@ -248,101 +277,59 @@ export default function WebhookSimulator() {
     // Create new history item
     const newRequest: WebhookRequest = {
       id: requestId,
-      url,
+      url: normalizedUrl,
       method,
-      payload,
+      payload: requestPayload,
       headers,
       timestamp: new Date()
     };
 
-    // In a real application, this would make an actual HTTP request
-    // For our demo purposes, we'll simulate a response
-    
-    setTimeout(() => {
-      try {
-        // Simulate different possible responses
-        const success = Math.random() > 0.3; // 70% success rate
-        
-        if (success) {
-          const statusCode = [200, 201, 202, 204][Math.floor(Math.random() * 4)];
-          const responseTime = Math.floor(Math.random() * 500) + 100; // 100-600ms
-          
-          let responseBody: string;
-          if (statusCode === 204) {
-            responseBody = '';
-          } else {
-            responseBody = JSON.stringify({
-              success: true,
-              message: `Webhook received successfully (${method})`,
-              timestamp: new Date().toISOString(),
-              request_id: `req_${Math.random().toString(36).substring(2, 15)}`
-            }, null, 2);
-          }
-          
-          const responseHeaders: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'X-Request-ID': `req_${Math.random().toString(36).substring(2, 15)}`,
-            'Date': new Date().toUTCString()
-          };
-          
-          newRequest.response = {
-            status: statusCode,
-            body: responseBody,
-            headers: responseHeaders,
-            time: responseTime
-          };
-          
-          toast({
-            title: "Webhook Sent",
-            description: `Successfully sent webhook (${statusCode})`,
-          });
-        } else {
-          // Simulate an error
-          const errorTypes = [
-            { status: 400, message: "Bad Request: The server cannot process the request due to client error" },
-            { status: 401, message: "Unauthorized: Authentication is required and has failed" },
-            { status: 404, message: "Not Found: The requested resource could not be found" },
-            { status: 500, message: "Internal Server Error: The server encountered an unexpected condition" },
-            { status: 503, message: "Service Unavailable: The server is not ready to handle the request" }
-          ];
-          
-          const error = errorTypes[Math.floor(Math.random() * errorTypes.length)];
-          const responseTime = Math.floor(Math.random() * 800) + 200; // 200-1000ms
-          
-          newRequest.response = {
-            status: error.status,
-            body: JSON.stringify({
-              success: false,
-              error: error.message
-            }, null, 2),
-            headers: {
-              'Content-Type': 'application/json',
-              'Date': new Date().toUTCString()
-            },
-            time: responseTime
-          };
-          
-          toast({
-            title: "Request Failed",
-            description: `Error: ${error.status} - ${error.message.split(':')[0]}`,
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        newRequest.error = error instanceof Error ? error.message : "Unknown error occurred";
-        
-        toast({
-          title: "Request Failed",
-          description: "An unexpected error occurred",
-          variant: "destructive",
-        });
-      } finally {
-        // Add request to history
-        setHistory(prev => [newRequest, ...prev]);
-        setSelectedHistoryItem(newRequest);
-        setIsLoading(false);
+    try {
+      const startedAt = performance.now();
+      const requestOptions: RequestInit = {
+        method,
+        headers,
+      };
+
+      if (method !== "GET" && method !== "HEAD" && requestPayload.trim()) {
+        requestOptions.body = requestPayload;
       }
-    }, 1500);
+
+      const response = await fetch(normalizedUrl, requestOptions);
+      const responseText = await response.text();
+      const responseTime = Math.round(performance.now() - startedAt);
+
+      const responseHeaders: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      newRequest.response = {
+        status: response.status,
+        body: responseText,
+        headers: responseHeaders,
+        time: responseTime,
+      };
+
+      toast({
+        title: response.ok ? "Webhook Sent" : "Request Completed With Error",
+        description: `Response status: ${response.status}`,
+        variant: response.ok ? "default" : "destructive",
+      });
+    } catch (error) {
+      newRequest.error = error instanceof Error ? error.message : "Network request failed";
+
+      toast({
+        title: "Request Failed",
+        description: newRequest.error,
+        variant: "destructive",
+      });
+    } finally {
+      // Add request to history
+      setHistory(prev => [newRequest, ...prev]);
+      setSelectedHistoryItem(newRequest);
+      setIsLoading(false);
+    }
   };
 
   // Clear all history
@@ -655,7 +642,7 @@ export default function WebhookSimulator() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => copyToClipboard(selectedHistoryItem.response.body, "Response body")}
+                        onClick={() => copyToClipboard(selectedHistoryItem.response?.body ?? "", "Response body")}
                       >
                         <Copy className="h-3 w-3 mr-1" />
                         Copy

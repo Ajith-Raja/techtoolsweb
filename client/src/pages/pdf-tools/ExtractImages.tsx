@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import JSZip from 'jszip';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -7,122 +8,254 @@ import { useToast } from '@/hooks/use-toast';
 import { PdfFileUpload } from '@/components/PdfFileUpload';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { extractImages, getDownloadUrl, PdfProgress, usePdfProgress } from '@/lib/pdfService';
 
 interface ExtractedImage {
   id: string;
-  pageNumber: number;
-  width: number;
-  height: number;
-  sizeKb: number;
-  format: string;
+  fileName: string;
+  mimeType: string;
+  blob: Blob;
   thumbnail: string; // base64 data URL
 }
 
 export default function ExtractImages() {
   const [file, setFile] = useState<File | null>(null);
   const [extractedImages, setExtractedImages] = useState<ExtractedImage[]>([]);
-  const [extractionMethod, setExtractionMethod] = useState<string>("all");
-  const [pageRange, setPageRange] = useState<string>("");
-  const [imageFormat, setImageFormat] = useState<string>("original");
-  const [minSize, setMinSize] = useState<number>(10); // min size in KB
+  const [imageType, setImageType] = useState<'png' | 'jpeg'>('png');
+  const [minSize, setMinSize] = useState<number>(50); // min size in pixels
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [archiveBlob, setArchiveBlob] = useState<Blob | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
   const { toast } = useToast();
+
+  const getMimeTypeFromFileName = (fileName: string): string => {
+    const lower = fileName.toLowerCase();
+    if (lower.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    return 'application/octet-stream';
+  };
+
+  const socket = usePdfProgress(taskId, async (progressData: PdfProgress) => {
+    setProgress(progressData.progress);
+    setDebugInfo(JSON.stringify({
+      status: progressData.status,
+      progress: progressData.progress,
+      task_id: progressData.task_id,
+      error: progressData.error
+    }, null, 2));
+
+    if (progressData.status === 'processing') {
+      return;
+    }
+
+    if (progressData.status === 'error') {
+      setProcessing(false);
+      toast({
+        title: 'Extraction Failed',
+        description: progressData.error || 'An error occurred during image extraction.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (progressData.status === 'success' || progressData.status === 'completed') {
+      try {
+        const activeTaskId = progressData.task_id || taskId;
+        if (!activeTaskId) {
+          throw new Error('Missing extraction task details');
+        }
+
+        const response = await fetch(getDownloadUrl(activeTaskId));
+        if (!response.ok) {
+          throw new Error(`Failed to download extracted images: ${response.statusText}`);
+        }
+
+        // Handle ZIP file extraction using JSZip
+        const buffer = await response.arrayBuffer();
+        setArchiveBlob(new Blob([buffer], { type: 'application/zip' }));
+        const images: ExtractedImage[] = [];
+
+        try {
+          const zip = new JSZip();
+          const zipFile = await zip.loadAsync(buffer);
+          let imageId = 0;
+          
+          setDebugInfo((prev) => prev + `\n\nZIP entries: ${Object.keys(zipFile.files).join(', ')}`);
+
+          for (const [fileName, file] of Object.entries(zipFile.files)) {
+            if (!file.dir && /\.(jpg|jpeg|png)$/i.test(fileName)) {
+              const rawBlob = await file.async('blob');
+              const imageBlob = rawBlob.type
+                ? rawBlob
+                : new Blob([rawBlob], { type: getMimeTypeFromFileName(fileName) });
+              const reader = new FileReader();
+              const thumbnail = await new Promise<string>((resolve) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.readAsDataURL(imageBlob);
+              });
+
+              images.push({
+                id: `img-${imageId++}`,
+                fileName,
+                mimeType: imageBlob.type || 'image/jpeg',
+                blob: imageBlob,
+                thumbnail,
+              });
+            }
+          }
+
+          if (images.length === 0) {
+            const zipEntries = Object.keys(zipFile.files).map(f => `${f} (dir: ${zipFile.files[f].dir})`).join(', ');
+            toast({
+              title: 'No images found',
+              description: `No valid images in ZIP. Entries: ${zipEntries || 'none'}`,
+            });
+          } else {
+            toast({
+              title: 'Images Extracted Successfully',
+              description: `Found ${images.length} image(s) in your PDF.`,
+            });
+          }
+        } catch (zipError) {
+          console.error('ZIP parsing failed:', zipError);
+          setDebugInfo((prev) => prev + `\n\nZIP Error: ${(zipError as Error).message}`);
+          toast({
+            title: 'Extraction Failed',
+            description: `Failed to parse extracted images: ${(zipError as Error).message}`,
+            variant: 'destructive',
+          });
+          setProcessing(false);
+          return;
+        }
+
+        setExtractedImages(images);
+        setProcessing(false);
+        setCompleted(true);
+        setProgress(100);
+      } catch (error) {
+        setProcessing(false);
+        setDebugInfo((prev) => prev + `\n\nError: ${(error as Error).message}`);
+        toast({
+          title: 'Extraction Failed',
+          description: (error as Error).message,
+          variant: 'destructive',
+        });
+      }
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close(1000, 'Component unmounting');
+      }
+    };
+  }, [socket]);
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
     setExtractedImages([]);
+    setArchiveBlob(null);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
   };
 
   const resetForm = () => {
+    if (socket) {
+      socket.close(1000, 'Resetting form');
+    }
     setFile(null);
     setExtractedImages([]);
+    setArchiveBlob(null);
     setProgress(0);
     setCompleted(false);
+    setProcessing(false);
+    setTaskId(null);
   };
 
-  const handleExtraction = () => {
+  const handleExtraction = async () => {
     if (!file) return;
     
-    if (extractionMethod === "range" && !pageRange.trim()) {
+    setProcessing(true);
+    setProgress(0);
+    setCompleted(false);
+    setExtractedImages([]);
+    setArchiveBlob(null);
+    setDebugInfo(`Starting extraction with min_size=${minSize}px`);
+
+    try {
+      const newTaskId = await extractImages(file, minSize, imageType);
+      setTaskId(newTaskId);
+      setDebugInfo((prev) => prev + `\nTask ID: ${newTaskId}`);
+    } catch (error) {
+      setProcessing(false);
+      setDebugInfo((prev) => prev + `\nExtraction error: ${(error as Error).message}`);
       toast({
-        title: "Page range required",
-        description: "Please specify the page range for extraction",
-        variant: "destructive"
+        title: 'Extraction Failed',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const downloadBlob = (blob: Blob, fileName: string) => {
+    const downloadUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+  };
+
+  const handleDownloadImage = (img: ExtractedImage) => {
+    downloadBlob(img.blob, img.fileName);
+  };
+
+  const handleDownloadAll = async () => {
+    if (archiveBlob) {
+      const baseName = (file?.name || 'extracted-images').replace(/\.pdf$/i, '');
+      downloadBlob(archiveBlob, `${baseName}-${imageType}-images.zip`);
+      toast({
+        title: 'Download started',
+        description: 'ZIP download started successfully.',
       });
       return;
     }
-    
-    setProcessing(true);
-    
-    // Simulate processing
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
-      
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        
-        // Generate placeholder extracted images
-        const simulatedImages: ExtractedImage[] = [];
-        const imageCount = Math.floor(Math.random() * 6) + 3; // 3-8 images
-        
-        for (let i = 1; i <= imageCount; i++) {
-          const width = Math.floor(Math.random() * 500) + 300; // 300-800px
-          const height = Math.floor(Math.random() * 400) + 200; // 200-600px
-          const sizeKb = Math.floor(Math.random() * 300) + 20; // 20-320KB
-          
-          // Generate a random colored rectangle as a placeholder image
-          const canvas = document.createElement('canvas');
-          canvas.width = 100;
-          canvas.height = 100;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            // Generate random color
-            const r = Math.floor(Math.random() * 200);
-            const g = Math.floor(Math.random() * 200);
-            const b = Math.floor(Math.random() * 200);
-            
-            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-            ctx.fillRect(0, 0, 100, 100);
-            
-            // Add some simple shapes
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.beginPath();
-            ctx.arc(50, 50, 30, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            const thumbnail = canvas.toDataURL('image/png');
-            
-            simulatedImages.push({
-              id: `img-${i}`,
-              pageNumber: Math.ceil(Math.random() * 5),
-              width,
-              height,
-              sizeKb,
-              format: Math.random() > 0.5 ? 'JPEG' : 'PNG',
-              thumbnail
-            });
-          }
-        }
-        
-        setExtractedImages(simulatedImages);
-        
-        toast({
-          title: 'Images Extracted Successfully',
-          description: `Found ${simulatedImages.length} images in your PDF.`,
-        });
-      }
-    }, 300);
+
+    if (taskId) {
+      window.open(getDownloadUrl(taskId), '_blank');
+      return;
+    }
+
+    if (extractedImages.length === 0) {
+      toast({
+        title: 'Nothing to download',
+        description: 'No extracted images are available yet.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    for (const img of extractedImages) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      handleDownloadImage(img);
+    }
+
+    toast({
+      title: 'Downloads started',
+      description: `Started ${extractedImages.length} image download(s).`,
+    });
   };
 
   return (
@@ -151,81 +284,47 @@ export default function ExtractImages() {
                 
                 {file && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label>Page Selection</Label>
-                        <RadioGroup 
-                          value={extractionMethod} 
-                          onValueChange={setExtractionMethod}
-                          className="flex flex-col space-y-2"
+                    <div className="space-y-3">
+                      <Label>Extraction Options</Label>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="image-type">Output Image Type</Label>
+                        <Select
+                          value={imageType}
+                          onValueChange={(value) => setImageType(value as 'png' | 'jpeg')}
+                          disabled={processing}
                         >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="all" id="all-pages" />
-                            <Label htmlFor="all-pages" className="cursor-pointer">Extract from all pages</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="range" id="page-range" />
-                            <Label htmlFor="page-range" className="cursor-pointer">Extract from specific pages</Label>
-                          </div>
-                        </RadioGroup>
-                        
-                        {extractionMethod === "range" && (
-                          <div className="ml-6 mt-2">
-                            <Input 
-                              placeholder="e.g. 1-3, 5, 7-9"
-                              value={pageRange}
-                              onChange={(e) => setPageRange(e.target.value)}
-                              disabled={processing}
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Enter page numbers or ranges separated by commas
-                            </p>
-                          </div>
-                        )}
+                          <SelectTrigger id="image-type">
+                            <SelectValue placeholder="Select image type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="png">PNG</SelectItem>
+                            <SelectItem value="jpeg">JPEG</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Extract all PDF images and convert them to the selected format.
+                        </p>
                       </div>
                       
-                      <div className="space-y-3">
-                        <Label>Image Options</Label>
-                        
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="image-format">Output Format</Label>
-                            <Select 
-                              value={imageFormat}
-                              onValueChange={setImageFormat}
-                              disabled={processing}
-                            >
-                              <SelectTrigger id="image-format">
-                                <SelectValue placeholder="Select format" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="original">Original Format</SelectItem>
-                                <SelectItem value="png">Convert All to PNG</SelectItem>
-                                <SelectItem value="jpg">Convert All to JPG</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <Label htmlFor="min-size">Minimum Size</Label>
-                              <span className="text-sm">{minSize} KB</span>
-                            </div>
-                            <Input
-                              id="min-size"
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={minSize}
-                              onChange={(e) => setMinSize(parseInt(e.target.value))}
-                              disabled={processing}
-                              className="w-full"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Ignore images smaller than the selected size
-                            </p>
-                          </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <Label htmlFor="min-size">Minimum Image Size (pixels)</Label>
+                          <span className="text-sm">{minSize}px</span>
                         </div>
+                        <Input
+                          id="min-size"
+                          type="range"
+                          min="10"
+                          max="500"
+                          value={minSize}
+                          onChange={(e) => setMinSize(parseInt(e.target.value))}
+                          disabled={processing}
+                          className="w-full"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Filters images by smallest dimension. Lower values = more images.
+                        </p>
                       </div>
                     </div>
                     
@@ -245,29 +344,33 @@ export default function ExtractImages() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium">Extracted Images ({extractedImages.length})</h3>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleDownloadAll}>
                     <Download className="h-3.5 w-3.5 mr-1" />
-                    Download All (ZIP)
+                    Download All
                   </Button>
                 </div>
                 
                 {extractedImages.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {extractedImages.map((img) => (
-                      <div key={img.id} className="border rounded-md overflow-hidden flex flex-col">
-                        <div className="aspect-square relative bg-muted flex items-center justify-center">
+                      <div key={img.id} className="border rounded-md overflow-hidden flex flex-col bg-muted">
+                        <div className="aspect-square relative bg-background flex items-center justify-center overflow-hidden">
                           <img 
                             src={img.thumbnail} 
-                            alt={`Image ${img.id}`}
-                            className="object-contain"
+                            alt={img.fileName}
+                            className="object-contain max-w-full max-h-full"
                           />
                         </div>
-                        <div className="p-2 bg-muted text-xs space-y-1">
-                          <p className="font-medium">Page {img.pageNumber}</p>
-                          <p className="text-muted-foreground">{img.width}×{img.height}px</p>
-                          <p className="text-muted-foreground">{img.format} • {img.sizeKb}KB</p>
+                        <div className="p-2 space-y-1 flex-1 flex flex-col">
+                          <p className="font-medium text-xs truncate">{img.fileName}</p>
+                          <p className="text-xs text-muted-foreground flex-1">{img.mimeType}</p>
                         </div>
-                        <Button variant="ghost" size="sm" className="mt-auto">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-auto rounded-none"
+                          onClick={() => handleDownloadImage(img)}
+                        >
                           <Download className="h-3 w-3 mr-1" />
                           Download
                         </Button>
@@ -280,6 +383,13 @@ export default function ExtractImages() {
                     <p className="text-muted-foreground">No images found in the document</p>
                   </div>
                 )}
+              </div>
+            )}
+            
+            {debugInfo && (
+              <div className="mt-4 p-3 bg-muted rounded-md border">
+                <p className="text-xs font-semibold mb-2">Debug Info:</p>
+                <pre className="text-xs whitespace-pre-wrap break-words text-muted-foreground">{debugInfo}</pre>
               </div>
             )}
           </CardContent>

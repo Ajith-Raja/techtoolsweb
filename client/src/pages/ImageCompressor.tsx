@@ -30,6 +30,7 @@ export default function ImageCompressor() {
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [compressedPreview, setCompressedPreview] = useState<string | null>(null);
   const [compressedImage, setCompressedImage] = useState<Blob | null>(null);
+  const [compressedMimeType, setCompressedMimeType] = useState<string | null>(null);
   const [quality, setQuality] = useState(80);
   const [enableResize, setEnableResize] = useState(false);
   const [maxWidth, setMaxWidth] = useState(1200);
@@ -62,6 +63,7 @@ export default function ImageCompressor() {
       // Reset compressed results when new image is uploaded
       setCompressedPreview(null);
       setCompressedImage(null);
+      setCompressedMimeType(null);
       setCompressedSize(0);
     };
     reader.readAsDataURL(file);
@@ -109,7 +111,7 @@ export default function ImageCompressor() {
       ctx.drawImage(img, 0, 0, width, height);
       
       // Get the compressed image as a blob
-      const mimeType = originalImage.type;
+      const mimeType = originalImage.type === 'image/png' ? 'image/webp' : originalImage.type;
       canvas.toBlob(
         (blob) => {
           if (!blob) {
@@ -118,6 +120,7 @@ export default function ImageCompressor() {
           
           // Store compressed image and preview
           setCompressedImage(blob);
+          setCompressedMimeType(blob.type || mimeType);
           setCompressedSize(blob.size);
           
           const reader = new FileReader();
@@ -149,11 +152,17 @@ export default function ImageCompressor() {
     const downloadLink = document.createElement('a');
     const url = URL.createObjectURL(compressedImage);
     
-    // Get the original filename and add "-compressed" to it
+    // Build output filename based on actual compressed mime type
     const originalFilename = originalImage.name;
-    const fileExtension = originalFilename.split('.').pop();
-    const baseFilename = originalFilename.substring(0, originalFilename.lastIndexOf('.'));
-    const compressedFilename = `${baseFilename}-compressed.${fileExtension}`;
+    const dotIndex = originalFilename.lastIndexOf('.');
+    const baseFilename = dotIndex > 0 ? originalFilename.substring(0, dotIndex) : originalFilename;
+    const extensionMap: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    };
+    const outputExtension = extensionMap[compressedMimeType || compressedImage.type] || originalFilename.split('.').pop() || 'img';
+    const compressedFilename = `${baseFilename}-compressed.${outputExtension}`;
     
     downloadLink.href = url;
     downloadLink.download = compressedFilename;
@@ -435,6 +444,11 @@ export default function ImageCompressor() {
                     
                     <div className="space-y-4">
                       <h3 className="text-base font-medium">Compression Results</h3>
+                      {compressedMimeType && (
+                        <div className="text-xs text-muted-foreground">
+                          Output format: {compressedMimeType === 'image/jpeg' ? 'JPEG' : compressedMimeType === 'image/png' ? 'PNG' : compressedMimeType === 'image/webp' ? 'WebP' : compressedMimeType}
+                        </div>
+                      )}
                       
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">

@@ -1,6 +1,10 @@
 // PDF Service - Handles communication with the PDF Tools API
 import React from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { queryClient } from "./queryClient";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // API base URL
 const PDF_API_BASE_URL = "http://localhost:8001";
@@ -14,6 +18,34 @@ export interface PdfTaskResult {
   download_url?: string;
   error_message?: string;
   result?: any;
+}
+
+export interface PdfProtectionPermissions {
+  printing: boolean;
+  copying: boolean;
+  editing: boolean;
+  annotating: boolean;
+}
+
+export interface PdfMetadataFields {
+  title: string;
+  author: string;
+  subject: string;
+  keywords: string;
+  creator: string;
+  producer: string;
+}
+
+export interface PdfWatermarkOptions {
+  watermarkType: 'text' | 'image';
+  watermarkText?: string;
+  watermarkImage?: File | null;
+  position: 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'tile';
+  opacity: number;
+  rotation: number;
+  fontSize?: number;
+  fontColor?: string;
+  imageScale?: number;
 }
 
 export interface PdfProgress {
@@ -39,7 +71,10 @@ export type PdfTask =
   | "reorder_pages" 
   | "add_page_numbers" 
   | "add_header_footer" 
-  | "pdf_to_word";
+  | "pdf_to_word"
+  | "word_to_pdf"
+  | "edit_metadata"
+  | "remove_pages";
 
 /**
  * Create a WebSocket connection to track task progress
@@ -103,6 +138,28 @@ export function getDownloadUrl(taskId: string): string {
   return `${PDF_API_BASE_URL}/download/${taskId}`;
 }
 
+export async function getPdfPageCount(pdfFile: File): Promise<number> {
+  const buffer = await pdfFile.arrayBuffer();
+  const pdfDocument = await pdfjsLib.getDocument({ data: buffer }).promise;
+  return pdfDocument.numPages;
+}
+
+export async function getPdfMetadata(pdfFile: File): Promise<PdfMetadataFields> {
+  const buffer = await pdfFile.arrayBuffer();
+  const pdfDocument = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const metadata = await pdfDocument.getMetadata().catch(() => null);
+
+  const info = (metadata?.info as Record<string, unknown> | undefined) ?? {};
+  return {
+    title: String(info['Title'] || pdfFile.name.replace(/\.[^/.]+$/, '')),
+    author: String(info['Author'] || ''),
+    subject: String(info['Subject'] || ''),
+    keywords: String(info['Keywords'] || ''),
+    creator: String(info['Creator'] || ''),
+    producer: String(info['Producer'] || ''),
+  }
+}
+
 /**
  * Compress a PDF file
  */
@@ -111,7 +168,7 @@ export async function compressPdf(pdfFile: File, quality: number): Promise<strin
   formData.append('pdf_file', pdfFile);
   formData.append('quality', quality.toString());
 
-  const response = await fetch(`${PDF_API_BASE_URL}/compress_pdf/`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/compress-pdf/`, {
     method: 'POST',
     body: formData,
   });
@@ -133,7 +190,7 @@ export async function pdfToImages(pdfFile: File, dpi: number, format: string): P
   formData.append('dpi', dpi.toString());
   formData.append('format', format);
 
-  const response = await fetch(`${PDF_API_BASE_URL}/pdf_to_images`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/pdf-to-images/`, {
     method: 'POST',
     body: formData,
   });
@@ -157,7 +214,7 @@ export async function imagesToPdf(images: File[], pageSize: string, margin: numb
   formData.append('page_size', pageSize);
   formData.append('margin', margin.toString());
 
-  const response = await fetch(`${PDF_API_BASE_URL}/images_to_pdf/`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/images-to-pdf/`, {
     method: 'POST',
     body: formData,
   });
@@ -180,7 +237,7 @@ export async function extractText(pdfFile: File, pageRange?: string): Promise<st
     formData.append('page_range', pageRange);
   }
 
-  const response = await fetch(`${PDF_API_BASE_URL}/extract_text`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/extract-text/`, {
     method: 'POST',
     body: formData,
   });
@@ -196,12 +253,17 @@ export async function extractText(pdfFile: File, pageRange?: string): Promise<st
 /**
  * Extract images from PDF
  */
-export async function extractImages(pdfFile: File, minSize: number): Promise<string> {
+export async function extractImages(
+  pdfFile: File,
+  minSize: number,
+  imageType: 'png' | 'jpeg' = 'png'
+): Promise<string> {
   const formData = new FormData();
   formData.append('pdf_file', pdfFile);
   formData.append('min_size', minSize.toString());
+  formData.append('image_type', imageType);
 
-  const response = await fetch(`${PDF_API_BASE_URL}/extract_images`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/extract-images/`, {
     method: 'POST',
     body: formData,
   });
@@ -223,7 +285,7 @@ export async function mergePdfs(pdfFiles: File[]): Promise<string> {
     formData.append('pdf_files', file);
   });
 
-  const response = await fetch(`${PDF_API_BASE_URL}/merge_pdfs/`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/merge-pdfs/`, {
     method: 'POST',
     body: formData,
   });
@@ -257,7 +319,7 @@ export async function splitPdf(
     formData.append('page_ranges', pageRanges);
   }
 
-  const response = await fetch(`${PDF_API_BASE_URL}/split_pdf/`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/split-pdf/`, {
     method: 'POST',
     body: formData,
   });
@@ -276,19 +338,25 @@ export async function splitPdf(
 export async function addPassword(
   pdfFile: File, 
   ownerPassword: string, 
-  userPassword?: string
+  userPassword?: string,
+  permissions?: PdfProtectionPermissions
 ): Promise<string> {
   const formData = new FormData();
   formData.append('pdf_file', pdfFile);
   
-  const passwordData = {
-    owner_password: ownerPassword,
-    user_password: userPassword
-  };
-  
-  formData.append('password', JSON.stringify(passwordData));
+  formData.append('owner_password', ownerPassword);
+  if (userPassword) {
+    formData.append('user_password', userPassword);
+  }
 
-  const response = await fetch(`${PDF_API_BASE_URL}/add_password`, {
+  if (permissions) {
+    formData.append('allow_printing', String(permissions.printing));
+    formData.append('allow_copying', String(permissions.copying));
+    formData.append('allow_editing', String(permissions.editing));
+    formData.append('allow_annotating', String(permissions.annotating));
+  }
+
+  const response = await fetch(`${PDF_API_BASE_URL}/add-password/`, {
     method: 'POST',
     body: formData,
   });
@@ -309,7 +377,7 @@ export async function removePassword(pdfFile: File, password: string): Promise<s
   formData.append('pdf_file', pdfFile);
   formData.append('password', password);
 
-  const response = await fetch(`${PDF_API_BASE_URL}/remove_password`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/remove-password/`, {
     method: 'POST',
     body: formData,
   });
@@ -325,21 +393,24 @@ export async function removePassword(pdfFile: File, password: string): Promise<s
 /**
  * Add watermark to PDF
  */
-export async function addWatermark(
-  pdfFile: File, 
-  watermarkText: string, 
-  position: string, 
-  opacity: number, 
-  rotation: number
-): Promise<string> {
+export async function addWatermark(pdfFile: File, options: PdfWatermarkOptions): Promise<string> {
   const formData = new FormData();
   formData.append('pdf_file', pdfFile);
-  formData.append('watermark_text', watermarkText);
-  formData.append('position', position);
-  formData.append('opacity', opacity.toString());
-  formData.append('rotation', rotation.toString());
+  formData.append('watermark_type', options.watermarkType);
+  formData.append('position', options.position);
+  formData.append('opacity', options.opacity.toString());
+  formData.append('rotation', options.rotation.toString());
 
-  const response = await fetch(`${PDF_API_BASE_URL}/add_watermark`, {
+  if (options.watermarkType === 'text') {
+    formData.append('watermark_text', options.watermarkText || 'CONFIDENTIAL');
+    formData.append('font_size', String(options.fontSize ?? 36));
+    formData.append('font_color', options.fontColor || '#FF0000');
+  } else if (options.watermarkImage) {
+    formData.append('watermark_image', options.watermarkImage);
+    formData.append('image_scale', String(options.imageScale ?? 0.25));
+  }
+
+  const response = await fetch(`${PDF_API_BASE_URL}/add-watermark/`, {
     method: 'POST',
     body: formData,
   });
@@ -353,12 +424,69 @@ export async function addWatermark(
 }
 
 /**
+ * Update PDF metadata
+ */
+export async function editMetadata(pdfFile: File, metadata: PdfMetadataFields): Promise<string> {
+  const formData = new FormData();
+  formData.append('pdf_file', pdfFile);
+  formData.append('title', metadata.title);
+  formData.append('author', metadata.author);
+  formData.append('subject', metadata.subject);
+  formData.append('keywords', metadata.keywords);
+  formData.append('creator', metadata.creator);
+  formData.append('producer', metadata.producer);
+
+  const response = await fetch(`${PDF_API_BASE_URL}/edit-metadata/`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to update metadata';
+    try {
+      const payload = await response.json();
+      if (payload?.detail) {
+        errorMessage = String(payload.detail);
+      }
+    } catch {
+      // Keep generic fallback when response is not JSON.
+    }
+    throw new Error(errorMessage);
+  }
+
+  const result = await response.json();
+  return result.task_id;
+}
+
+/**
+ * Remove selected pages from PDF
+ */
+export async function removePages(pdfFile: File, pageRanges: string): Promise<string> {
+  const formData = new FormData();
+  formData.append('pdf_file', pdfFile);
+  formData.append('page_ranges', pageRanges);
+
+  const response = await fetch(`${PDF_API_BASE_URL}/remove-pages/`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to remove pages');
+  }
+
+  const result = await response.json();
+  return result.task_id;
+}
+
+/**
  * Rotate PDF pages
  */
 export async function rotatePages(
   pdfFile: File, 
   angle: number, 
-  pageRange?: string
+  pageRange?: string,
+  pageRotations?: Record<number, number>
 ): Promise<string> {
   const formData = new FormData();
   formData.append('pdf_file', pdfFile);
@@ -368,7 +496,13 @@ export async function rotatePages(
     formData.append('page_range', pageRange);
   }
 
-  const response = await fetch(`${PDF_API_BASE_URL}/rotate_pages/`, {
+  if (pageRotations && Object.keys(pageRotations).length > 0) {
+    formData.append('page_rotations', JSON.stringify(pageRotations));
+  }
+
+  console.log(formData)
+
+  const response = await fetch(`${PDF_API_BASE_URL}/rotate-pages/`, {
     method: 'POST',
     body: formData,
   });
@@ -389,7 +523,7 @@ export async function reorderPages(pdfFile: File, pageOrder: string): Promise<st
   formData.append('pdf_file', pdfFile);
   formData.append('page_order', pageOrder);
 
-  const response = await fetch(`${PDF_API_BASE_URL}/reorder_pages`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/reorder-pages/`, {
     method: 'POST',
     body: formData,
   });
@@ -417,7 +551,7 @@ export async function addPageNumbers(
   formData.append('start_number', startNumber.toString());
   formData.append('font_size', fontSize.toString());
 
-  const response = await fetch(`${PDF_API_BASE_URL}/add_page_numbers`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/add-page-numbers/`, {
     method: 'POST',
     body: formData,
   });
@@ -452,7 +586,7 @@ export async function addHeaderFooter(
   
   formData.append('font_size', fontSize.toString());
 
-  const response = await fetch(`${PDF_API_BASE_URL}/add_header_footer`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/add-header-footer/`, {
     method: 'POST',
     body: formData,
   });
@@ -472,13 +606,33 @@ export async function pdfToWord(pdfFile: File): Promise<string> {
   const formData = new FormData();
   formData.append('pdf_file', pdfFile);
 
-  const response = await fetch(`${PDF_API_BASE_URL}/pdf_to_word`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/pdf-to-word/`, {
     method: 'POST',
     body: formData,
   });
 
   if (!response.ok) {
     throw new Error('Failed to convert PDF to Word');
+  }
+
+  const result = await response.json();
+  return result.task_id;
+}
+
+/**
+ * Convert Word to PDF
+ */
+export async function wordToPdf(wordFile: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('word_file', wordFile);
+
+  const response = await fetch(`${PDF_API_BASE_URL}/word_to_pdf/`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to convert Word to PDF');
   }
 
   const result = await response.json();

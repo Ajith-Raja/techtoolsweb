@@ -3,9 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 import qrcode
 from qrcode.image.styledpil import StyledPilImage
 from qrcode.image.styles.moduledrawers import *
-from qrcode.image.styles.colormasks import *
+from qrcode.image.styles.colormasks import (
+    SolidFillColorMask,
+    RadialGradiantColorMask,
+    SquareGradiantColorMask,
+    HorizontalGradiantColorMask,
+    VerticalGradiantColorMask,
+)
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageColor
 import base64
 import uvicorn
 import json
@@ -34,11 +40,11 @@ MODULE_DRAWERS = {
 }
 
 COLOR_MASKS = {
-    "solid": SolidFillColorMask(),
-    "radial": RadialGradiantColorMask(),
-    "square": SquareGradiantColorMask(),
-    "horizontal": HorizontalGradiantColorMask(),
-    "vertical": VerticalGradiantColorMask(),
+    "solid": SolidFillColorMask,
+    "radial": RadialGradiantColorMask,
+    "square": SquareGradiantColorMask,
+    "horizontal": HorizontalGradiantColorMask,
+    "vertical": VerticalGradiantColorMask,
 }
 
 @app.get("/styles")
@@ -90,14 +96,38 @@ async def generate_qr_code(
         if color_mask not in COLOR_MASKS:
             raise HTTPException(status_code=400, detail="Invalid color mask style")
         
-        # Prepare color mask if using gradient
-        selected_color_mask = COLOR_MASKS[color_mask]
-        if color_mask != "solid" and gradient_start and gradient_end:
+        # Prepare color mask with valid kwargs for each mask type
+        bg_color = ImageColor.getrgb(back_color)
+        fg_color = ImageColor.getrgb(fill_color)
+
+        if color_mask == "solid":
+            selected_color_mask = SolidFillColorMask(
+                back_color=bg_color,
+                front_color=fg_color,
+            )
+        elif color_mask in ("radial", "square"):
+            start_color = ImageColor.getrgb(gradient_start) if gradient_start else fg_color
+            end_color = ImageColor.getrgb(gradient_end) if gradient_end else fg_color
             selected_color_mask = COLOR_MASKS[color_mask](
-                back_color=back_color,
-                front_color=fill_color,
-                center_color=gradient_start,
-                edge_color=gradient_end
+                back_color=bg_color,
+                center_color=start_color,
+                edge_color=end_color,
+            )
+        elif color_mask == "horizontal":
+            start_color = ImageColor.getrgb(gradient_start) if gradient_start else fg_color
+            end_color = ImageColor.getrgb(gradient_end) if gradient_end else fg_color
+            selected_color_mask = COLOR_MASKS[color_mask](
+                back_color=bg_color,
+                left_color=start_color,
+                right_color=end_color,
+            )
+        else:  # vertical
+            start_color = ImageColor.getrgb(gradient_start) if gradient_start else fg_color
+            end_color = ImageColor.getrgb(gradient_end) if gradient_end else fg_color
+            selected_color_mask = COLOR_MASKS[color_mask](
+                back_color=bg_color,
+                top_color=start_color,
+                bottom_color=end_color,
             )
         
         # Create QR code with styling

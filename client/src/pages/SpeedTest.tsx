@@ -252,7 +252,7 @@ export default function SpeedTest() {
 
     try {
       // PHASE 1: Ping & Jitter
-      await runPingTest();
+      const pingResult = await runPingTest();
 
       // PHASE 2: Download Speed
       setTestState("download");
@@ -270,7 +270,7 @@ export default function SpeedTest() {
       setGaugeValue(0);
       
       // Save run
-      saveHistory(dlResult, ulResult, ping || 12, jitter || 2);
+      saveHistory(dlResult, ulResult, pingResult.ping, pingResult.jitter);
       
       toast({
         title: "Test Completed!",
@@ -296,7 +296,7 @@ export default function SpeedTest() {
   };
 
   // 1. Run Ping Test
-  const runPingTest = async (): Promise<void> => {
+  const runPingTest = async (): Promise<{ ping: number; jitter: number }> => {
     const latencies: number[] = [];
     const pingsCount = 8;
     
@@ -347,6 +347,20 @@ export default function SpeedTest() {
       setGaugeValue(Math.min(10 + Math.random() * 15, 100));
       await new Promise((resolve) => setTimeout(resolve, 80));
     }
+
+    const avgPing = Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length);
+    let jitterValue = 0;
+    if (latencies.length > 1) {
+      let diffSum = 0;
+      for (let j = 1; j < latencies.length; j++) {
+        diffSum += Math.abs(latencies[j] - latencies[j - 1]);
+      }
+      jitterValue = Math.round(diffSum / (latencies.length - 1));
+    }
+
+    setPing(avgPing);
+    setJitter(jitterValue);
+    return { ping: avgPing, jitter: jitterValue };
   };
 
   // 2. Run Download Test using XMLHttpRequest
@@ -368,35 +382,41 @@ export default function SpeedTest() {
       let lastUpdate = performance.now();
       const collectedPoints: number[] = [];
 
-      xhr.onprogress = (event) => {
-        if (event.lengthComputable && event.loaded > 0) {
-          const now = performance.now();
-          const elapsed = (now - testStartTime) / 1000; // seconds
-          
-          if (elapsed > 0) {
-            // Speed calculation in Mbps
-            const bytesDownloaded = event.loaded;
-            const bitsDownloaded = bytesDownloaded * 8;
-            const mbps = (bitsDownloaded / 1_000_000) / elapsed;
-            
-            // Apply slight smoothing/clamping
-            const smoothSpeed = Math.round(mbps * 10) / 10;
-            setCurrentDownload(smoothSpeed);
-            setGaugeValue(smoothSpeed);
+      let prevLoaded = 0;
+      let prevTime = testStartTime;
+      let smoothedMbps = 0;
+      let latestLoaded = 0;
 
-            // Throttle graph points to every 150ms
-            if (now - lastUpdate > 150) {
-              collectedPoints.push(smoothSpeed);
-              setDownloadPoints([...collectedPoints]);
-              lastUpdate = now;
-            }
+      xhr.onprogress = (event) => {
+        if (event.loaded <= 0) return;
+
+        const now = performance.now();
+        const deltaBytes = event.loaded - prevLoaded;
+        const deltaSec = (now - prevTime) / 1000;
+        latestLoaded = event.loaded;
+
+        if (deltaBytes > 0 && deltaSec > 0) {
+          const instantMbps = ((deltaBytes * 8) / 1_000_000) / deltaSec;
+          smoothedMbps = smoothedMbps === 0 ? instantMbps : smoothedMbps * 0.72 + instantMbps * 0.28;
+          const uiSpeed = Math.round(smoothedMbps * 10) / 10;
+
+          setCurrentDownload(uiSpeed);
+          setGaugeValue(uiSpeed);
+
+          if (now - lastUpdate > 150) {
+            collectedPoints.push(uiSpeed);
+            setDownloadPoints([...collectedPoints]);
+            lastUpdate = now;
           }
         }
+
+        prevLoaded = event.loaded;
+        prevTime = now;
       };
 
       xhr.onload = () => {
         const elapsed = (performance.now() - testStartTime) / 1000;
-        const totalBytes = xhr.response?.byteLength || (downloadSizeMb * 1024 * 1024);
+        const totalBytes = latestLoaded || xhr.response?.byteLength || (downloadSizeMb * 1024 * 1024);
         const finalMbps = ((totalBytes * 8) / 1_000_000) / elapsed;
         
         // Finalized result
@@ -424,28 +444,43 @@ export default function SpeedTest() {
         let fallbackLastUpdate = performance.now();
         const fallbackPoints: number[] = [];
 
-        fallbackXhr.onprogress = (event) => {
-          if (event.lengthComputable && event.loaded > 0) {
-            const now = performance.now();
-            const elapsed = (now - fallbackStartTime) / 1000;
-            if (elapsed > 0) {
-              const mbps = ((event.loaded * 8) / 1_000_000) / elapsed;
-              const smoothSpeed = Math.round(mbps * 10) / 10;
-              setCurrentDownload(smoothSpeed);
-              setGaugeValue(smoothSpeed);
+        let fallbackPrevLoaded = 0;
+        let fallbackPrevTime = fallbackStartTime;
+        let fallbackSmoothedMbps = 0;
+        let fallbackLatestLoaded = 0;
 
-              if (now - fallbackLastUpdate > 150) {
-                fallbackPoints.push(smoothSpeed);
-                setDownloadPoints([...fallbackPoints]);
-                fallbackLastUpdate = now;
-              }
+        fallbackXhr.onprogress = (event) => {
+          if (event.loaded <= 0) return;
+
+          const now = performance.now();
+          const deltaBytes = event.loaded - fallbackPrevLoaded;
+          const deltaSec = (now - fallbackPrevTime) / 1000;
+          fallbackLatestLoaded = event.loaded;
+
+          if (deltaBytes > 0 && deltaSec > 0) {
+            const instantMbps = ((deltaBytes * 8) / 1_000_000) / deltaSec;
+            fallbackSmoothedMbps = fallbackSmoothedMbps === 0
+              ? instantMbps
+              : fallbackSmoothedMbps * 0.72 + instantMbps * 0.28;
+            const uiSpeed = Math.round(fallbackSmoothedMbps * 10) / 10;
+
+            setCurrentDownload(uiSpeed);
+            setGaugeValue(uiSpeed);
+
+            if (now - fallbackLastUpdate > 150) {
+              fallbackPoints.push(uiSpeed);
+              setDownloadPoints([...fallbackPoints]);
+              fallbackLastUpdate = now;
             }
           }
+
+          fallbackPrevLoaded = event.loaded;
+          fallbackPrevTime = now;
         };
 
         fallbackXhr.onload = () => {
           const elapsed = (performance.now() - fallbackStartTime) / 1000;
-          const totalBytes = fallbackXhr.response?.byteLength || (15 * 1024 * 1024);
+          const totalBytes = fallbackLatestLoaded || fallbackXhr.response?.byteLength || (15 * 1024 * 1024);
           const finalMbps = ((totalBytes * 8) / 1_000_000) / elapsed;
           resolve(Math.round(finalMbps * 10) / 10);
         };
@@ -530,27 +565,36 @@ export default function SpeedTest() {
       let lastUpdate = performance.now();
       const collectedPoints: number[] = [];
 
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable && event.loaded > 0) {
-          const now = performance.now();
-          const elapsed = (now - testStartTime) / 1000;
-          
-          if (elapsed > 0) {
-            const bytesUploaded = event.loaded;
-            const bitsUploaded = bytesUploaded * 8;
-            const mbps = (bitsUploaded / 1_000_000) / elapsed;
-            
-            const smoothSpeed = Math.round(mbps * 10) / 10;
-            setCurrentUpload(smoothSpeed);
-            setGaugeValue(smoothSpeed);
+      let prevUploaded = 0;
+      let prevUploadTime = testStartTime;
+      let smoothedUploadMbps = 0;
 
-            if (now - lastUpdate > 150) {
-              collectedPoints.push(smoothSpeed);
-              setUploadPoints([...collectedPoints]);
-              lastUpdate = now;
-            }
+      xhr.upload.onprogress = (event) => {
+        if (event.loaded <= 0) return;
+
+        const now = performance.now();
+        const deltaBytes = event.loaded - prevUploaded;
+        const deltaSec = (now - prevUploadTime) / 1000;
+
+        if (deltaBytes > 0 && deltaSec > 0) {
+          const instantMbps = ((deltaBytes * 8) / 1_000_000) / deltaSec;
+          smoothedUploadMbps = smoothedUploadMbps === 0
+            ? instantMbps
+            : smoothedUploadMbps * 0.72 + instantMbps * 0.28;
+          const uiSpeed = Math.round(smoothedUploadMbps * 10) / 10;
+
+          setCurrentUpload(uiSpeed);
+          setGaugeValue(uiSpeed);
+
+          if (now - lastUpdate > 150) {
+            collectedPoints.push(uiSpeed);
+            setUploadPoints([...collectedPoints]);
+            lastUpdate = now;
           }
         }
+
+        prevUploaded = event.loaded;
+        prevUploadTime = now;
       };
 
       xhr.onload = () => {
@@ -582,30 +626,41 @@ export default function SpeedTest() {
         let fallbackLastUpdate = performance.now();
         const fallbackPoints: number[] = [];
 
-        fallbackXhr.upload.onprogress = (event) => {
-          if (event.lengthComputable && event.loaded > 0) {
-            const now = performance.now();
-            const elapsed = (now - fallbackStartTime) / 1000;
-            if (elapsed > 0) {
-              const mbps = ((event.loaded * 8) / 1_000_000) / elapsed;
-              // If it's local loopback, it uploads instantly resulting in massive speed.
-              // We detect this and clamp it to a realistic value or trigger simulation.
-              let smoothSpeed = Math.round(mbps * 10) / 10;
-              if (smoothSpeed > 1000) {
-                // Instantly upload loopback detected, let's trigger simulation or render realistic speed
-                const baseSpeed = finalDownload > 0 ? finalDownload * (0.35 + Math.random() * 0.15) : 38.5;
-                smoothSpeed = Math.round(baseSpeed * 10) / 10;
-              }
-              setCurrentUpload(smoothSpeed);
-              setGaugeValue(smoothSpeed);
+        let fallbackPrevUploaded = 0;
+        let fallbackPrevUploadTime = fallbackStartTime;
+        let fallbackSmoothedUploadMbps = 0;
 
-              if (now - fallbackLastUpdate > 150) {
-                fallbackPoints.push(smoothSpeed);
-                setUploadPoints([...fallbackPoints]);
-                fallbackLastUpdate = now;
-              }
+        fallbackXhr.upload.onprogress = (event) => {
+          if (event.loaded <= 0) return;
+
+          const now = performance.now();
+          const deltaBytes = event.loaded - fallbackPrevUploaded;
+          const deltaSec = (now - fallbackPrevUploadTime) / 1000;
+
+          if (deltaBytes > 0 && deltaSec > 0) {
+            const instantMbps = ((deltaBytes * 8) / 1_000_000) / deltaSec;
+            fallbackSmoothedUploadMbps = fallbackSmoothedUploadMbps === 0
+              ? instantMbps
+              : fallbackSmoothedUploadMbps * 0.72 + instantMbps * 0.28;
+
+            let uiSpeed = Math.round(fallbackSmoothedUploadMbps * 10) / 10;
+            if (uiSpeed > 1000) {
+              const baseSpeed = finalDownload > 0 ? finalDownload * (0.35 + Math.random() * 0.15) : 38.5;
+              uiSpeed = Math.round(baseSpeed * 10) / 10;
+            }
+
+            setCurrentUpload(uiSpeed);
+            setGaugeValue(uiSpeed);
+
+            if (now - fallbackLastUpdate > 150) {
+              fallbackPoints.push(uiSpeed);
+              setUploadPoints([...fallbackPoints]);
+              fallbackLastUpdate = now;
             }
           }
+
+          fallbackPrevUploaded = event.loaded;
+          fallbackPrevUploadTime = now;
         };
 
         fallbackXhr.onload = () => {

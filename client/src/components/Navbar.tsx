@@ -51,6 +51,8 @@ import {
   HeartPulse,
   Car,
   Home,
+  Flame,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -216,19 +218,39 @@ export function Navbar() {
       href: "/calculators/home-loan-insurance",
       icon: <Home className="mr-2 h-4 w-4" />,
     },
+    {
+      name: "Rent Agreement Generator",
+      href: "/calculators/rent-agreement",
+      icon: <FileText className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Calorie Deficit Calculator",
+      href: "/calculators/calorie-deficit",
+      icon: <Flame className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "ROI Calculator",
+      href: "/calculators/roi",
+      icon: <TrendingUp className="mr-2 h-4 w-4" />,
+    },
+    {
+      name: "Legal Notice Generator",
+      href: "/calculators/legal-notice",
+      icon: <Scale className="mr-2 h-4 w-4" />,
+    },
   ];
   
   const otherToolsNavigation: NavItem[] = [
-    {
-      name: "QR Code Generator",
-      href: "/qr-code-generator",
-      icon: <QrCode className="mr-2 h-4 w-4" />,
-    },
-    {
-      name: "Diff Checker",
-      href: "/diff-checker",
-      icon: <GitCompare className="mr-2 h-4 w-4" />,
-    },
+    // {
+    //   name: "QR Code Generator",
+    //   href: "/qr-code-generator",
+    //   icon: <QrCode className="mr-2 h-4 w-4" />,
+    // },
+    // {
+    //   name: "Diff Checker",
+    //   href: "/diff-checker",
+    //   icon: <GitCompare className="mr-2 h-4 w-4" />,
+    // },
     // {
     //   name: "Transliterate",
     //   href: "/transliterate",
@@ -244,11 +266,11 @@ export function Navbar() {
       href: "/youtube-downloader",
       icon: <Youtube className="mr-2 h-4 w-4" />,
     },
-    {
-      name: "Instagram Downloader",
-      href: "/instagram-downloader",
-      icon: <Instagram className="mr-2 h-4 w-4" />,
-    },
+    // {
+    //   name: "Instagram Downloader",
+    //   href: "/instagram-downloader",
+    //   icon: <Instagram className="mr-2 h-4 w-4" />,
+    // },
     {
       name: "Regex Tester",
       href: "/regex-tester",
@@ -259,11 +281,11 @@ export function Navbar() {
       href: "/image-to-svg",
       icon: <FileImage className="mr-2 h-4 w-4" />,
     },
-    {
-      name: "Calendar Generator",
-      href: "/calendar-generator",
-      icon: <Calendar className="mr-2 h-4 w-4" />,
-    }
+    // {
+    //   name: "Calendar Generator",
+    //   href: "/calendar-generator",
+    //   icon: <Calendar className="mr-2 h-4 w-4" />,
+    // }
   ];
 
   const pdfToolsNavigation: NavItem[] = [
@@ -413,7 +435,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2">
                   {toolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <Link
@@ -454,7 +476,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2 max-h-[calc(100vh-100px)] overflow-y-auto">
                   {calculatorsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <Link
@@ -490,7 +512,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 max-h-[calc(100vh-100px)] overflow-y-auto">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2 max-h-[calc(100vh-100px)] overflow-y-auto">
                   {pdfToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <Link
@@ -526,7 +548,7 @@ export function Navbar() {
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-[520px] grid grid-cols-2 gap-1 p-2">
                   {otherToolsNavigation.map((item) => (
                     <DropdownMenuItem key={item.name} asChild>
                       <Link

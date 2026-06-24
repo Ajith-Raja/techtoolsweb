@@ -124,7 +124,7 @@ export default function ApiTester() {
         try {
           setIsLoadingShared(true);
           // Fetch the shared request
-          const response = await fetch(`http://localhost:8000/api/shared/${shareId}`);
+          const response = await fetch(`http://localhost:8001/api/shared/${shareId}`);
           
           if (response.ok) {
             const data = await response.json();
@@ -375,7 +375,7 @@ export default function ApiTester() {
       
       try {
         // Try to connect to the FastAPI server
-        const result = await apiRequest("POST", "http://localhost:8000/api/execute", apiRequestData);
+        const result = await apiRequest("POST", "http://localhost:8001/api/execute", apiRequestData);
         const responseData = await result.json() as ApiResponseData;
         
         setResponse(responseData);
@@ -421,7 +421,7 @@ export default function ApiTester() {
       
       // Send the request to the share API
       try {
-        const result = await apiRequest("POST", "http://localhost:8000/api/share", requestData);
+        const result = await apiRequest("POST", "http://localhost:8001/api/share", requestData);
         const shareData = await result.json();
         debugger;
         if (shareData.share_id) {
@@ -899,7 +899,7 @@ export default function ApiTester() {
       if (shareId) {
         try {
           // Attempt to fetch the shared request
-          const result = await apiRequest("GET", `http://localhost:8000/share/${shareId}`);
+          const result = await apiRequest("GET", `http://localhost:8001/share/${shareId}`);
           const sharedData = await result.json();
           
           if (sharedData.request_data) {

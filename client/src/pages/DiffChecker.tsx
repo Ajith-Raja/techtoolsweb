@@ -1,585 +1,694 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { diffArrays, diffChars, diffWordsWithSpace } from "diff";
+import { ArrowLeftRight, Copy, Download, FileUp, GitCompare, RotateCcw, Share2, Wand2 } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
-import { Copy, GitCompare, ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-interface DiffLine {
-  type: 'unchanged' | 'addition' | 'deletion';
-  originalIndex: number;
-  modifiedIndex: number;
-  originalContent: string;
-  modifiedContent: string;
-}
+type DiffMode = "line" | "word" | "char";
+type ViewMode = "side-by-side" | "unified";
 
-export default function DiffChecker() {
-  const [originalText, setOriginalText] = useState<string>("");
-  const [modifiedText, setModifiedText] = useState<string>("");
-  const [diffResult, setDiffResult] = useState<React.ReactNode>(null);
-  const [diffData, setDiffData] = useState<DiffLine[]>([]);
-  const [mergedText, setMergedText] = useState<string>("");
-  const [stats, setStats] = useState<{
-    additions: number;
-    deletions: number;
-    unchanged: number;
-  }>({ additions: 0, deletions: 0, unchanged: 0 });
-  const [activeTab, setActiveTab] = useState<string>("input");
-  const [copied, setCopied] = useState<boolean>(false);
+type CompareOptions = {
+  ignoreCase: boolean;
+  ignoreWhitespace: boolean;
+  ignoreLineEndings: boolean;
+  showOnlyDifferences: boolean;
+};
 
-  // Calculate the diff between two pieces of text
-  const calculateDiff = () => {
-    if (!originalText && !modifiedText) {
+type LineType = "unchanged" | "added" | "removed" | "changed";
+
+type LineToken = {
+  type: "unchanged" | "added" | "removed";
+  text: string;
+};
+
+type SideRow = {
+  type: LineType;
+  left?: LineToken;
+  right?: LineToken;
+};
+
+type UnifiedRow = {
+  key: string;
+  prefix: " " | "+" | "-";
+  type: "unchanged" | "added" | "removed";
+  text: string;
+  leftLine?: number;
+  rightLine?: number;
+};
+
+type InlineToken = {
+  value: string;
+  added?: boolean;
+  removed?: boolean;
+};
+
+const sampleLeft = `Travel Plan v1\nDestination: Kyoto\nDuration: 5 days\nBudget: 1200 USD\nHotel: Sakura Inn\nNotes: Visit temples and local markets.`;
+
+const sampleRight = `Travel Plan v2\nDestination: Kyoto, Japan\nDuration: 6 days\nBudget: 1450 USD\nHotel: Sakura Riverside Inn\nNotes: Visit temples, local markets, and Arashiyama.`;
+
+const tokenizeLines = (left: string, right: string, options: CompareOptions): LineToken[] => {
+  const leftLines = left.split("\n");
+  const rightLines = right.split("\n");
+
+  const chunks = diffArrays(leftLines, rightLines, {
+    comparator: (a, b) => {
+      if (options.ignoreCase) {
+        return a.toLowerCase() === b.toLowerCase();
+      }
+      return a === b;
+    },
+  });
+
+  const tokens: LineToken[] = [];
+
+  chunks.forEach((chunk) => {
+    if (!chunk.value || chunk.value.length === 0) return;
+
+    const type: LineToken["type"] = chunk.added ? "added" : chunk.removed ? "removed" : "unchanged";
+    chunk.value.forEach((line) => {
+      tokens.push({ type, text: line });
+    });
+  });
+
+  return tokens;
+};
+
+const alignSideBySide = (tokens: LineToken[]): SideRow[] => {
+  const rows: SideRow[] = [];
+  let i = 0;
+
+  while (i < tokens.length) {
+    const current = tokens[i];
+
+    if (current.type === "unchanged") {
+      rows.push({ type: "unchanged", left: current, right: current });
+      i += 1;
+      continue;
+    }
+
+    if (current.type === "removed") {
+      const removedRun: LineToken[] = [];
+      while (i < tokens.length && tokens[i].type === "removed") {
+        removedRun.push(tokens[i]);
+        i += 1;
+      }
+
+      const addedRun: LineToken[] = [];
+      const start = i;
+      while (i < tokens.length && tokens[i].type === "added") {
+        addedRun.push(tokens[i]);
+        i += 1;
+      }
+
+      if (addedRun.length > 0) {
+        const maxRows = Math.max(removedRun.length, addedRun.length);
+        for (let idx = 0; idx < maxRows; idx += 1) {
+          rows.push({
+            type: "changed",
+            left: removedRun[idx],
+            right: addedRun[idx],
+          });
+        }
+      } else {
+        removedRun.forEach((line) => {
+          rows.push({ type: "removed", left: line });
+        });
+      }
+
+      if (addedRun.length === 0) {
+        i = start;
+      }
+
+      continue;
+    }
+
+    if (current.type === "added") {
+      rows.push({ type: "added", right: current });
+      i += 1;
+      continue;
+    }
+  }
+
+  return rows;
+};
+
+const toUnifiedRows = (rows: SideRow[], showOnlyDifferences: boolean): UnifiedRow[] => {
+  const unified: UnifiedRow[] = [];
+  let leftLine = 1;
+  let rightLine = 1;
+
+  rows.forEach((row, index) => {
+    if (row.type === "unchanged") {
+      if (!showOnlyDifferences && row.left) {
+        unified.push({
+          key: `u-${index}-same`,
+          prefix: " ",
+          type: "unchanged",
+          text: row.left.text,
+          leftLine,
+          rightLine,
+        });
+      }
+      leftLine += 1;
+      rightLine += 1;
       return;
     }
 
-    // Split both texts into lines
-    const originalLines = originalText.split("\n");
-    const modifiedLines = modifiedText.split("\n");
-
-    // Simple diff algorithm
-    let additions = 0;
-    let deletions = 0;
-    let unchanged = 0;
-    
-    const diffLines: DiffLine[] = [];
-    const result: React.ReactNode[] = [];
-    let i = 0;
-
-    // Find longest common subsequence of lines
-    const lcs = longestCommonSubsequence(originalLines, modifiedLines);
-    
-    let originalIndex = 0;
-    let modifiedIndex = 0;
-    let lcsIndex = 0;
-
-    while (originalIndex < originalLines.length || modifiedIndex < modifiedLines.length) {
-      // Current line is in both texts
-      if (lcsIndex < lcs.length && 
-          originalIndex < originalLines.length && 
-          modifiedIndex < modifiedLines.length && 
-          originalLines[originalIndex] === lcs[lcsIndex] &&
-          modifiedLines[modifiedIndex] === lcs[lcsIndex]) {
-        
-        diffLines.push({
-          type: 'unchanged',
-          originalIndex,
-          modifiedIndex,
-          originalContent: originalLines[originalIndex],
-          modifiedContent: modifiedLines[modifiedIndex]
-        });
-        
-        result.push(
-          <div key={`unchanged-${i++}`} className="flex">
-            <div className="w-1/2 py-1 px-2 bg-gray-50 border-r flex">
-              <span className="w-8 text-gray-500 inline-block text-right mr-3">{originalIndex + 1}</span>
-              {originalLines[originalIndex]}
-            </div>
-            <div className="w-1/2 py-1 px-2 bg-gray-50 flex">
-              <span className="w-8 text-gray-500 inline-block text-right mr-3">{modifiedIndex + 1}</span>
-              {modifiedLines[modifiedIndex]}
-            </div>
-          </div>
-        );
-        unchanged++;
-        originalIndex++;
-        modifiedIndex++;
-        lcsIndex++;
-      }
-      // Line was deleted from original
-      else if (originalIndex < originalLines.length && 
-              (lcsIndex >= lcs.length || originalLines[originalIndex] !== lcs[lcsIndex])) {
-        
-        diffLines.push({
-          type: 'deletion',
-          originalIndex,
-          modifiedIndex: -1,
-          originalContent: originalLines[originalIndex],
-          modifiedContent: ''
-        });
-        
-        result.push(
-          <div key={`deletion-${i++}`} className="flex">
-            <div className="w-1/2 py-1 px-2 bg-red-900/10 text-red-900 border-r border-red-200 flex shadow-sm">
-              <span className="w-8 text-red-700 inline-block text-right mr-3">{originalIndex + 1}</span>
-              {originalLines[originalIndex]}
-            </div>
-            <div className="w-1/2 py-1 px-2"></div>
-          </div>
-        );
-        deletions++;
-        originalIndex++;
-      }
-      // Line was added in modified
-      else if (modifiedIndex < modifiedLines.length && 
-              (lcsIndex >= lcs.length || modifiedLines[modifiedIndex] !== lcs[lcsIndex])) {
-        
-        diffLines.push({
-          type: 'addition',
-          originalIndex: -1,
-          modifiedIndex,
-          originalContent: '',
-          modifiedContent: modifiedLines[modifiedIndex]
-        });
-        
-        result.push(
-          <div key={`addition-${i++}`} className="flex">
-            <div className="w-1/2 py-1 px-2 border-r"></div>
-            <div className="w-1/2 py-1 px-2 bg-green-900/10 text-green-900 border-green-200 flex shadow-sm">
-              <span className="w-8 text-green-700 inline-block text-right mr-3">{modifiedIndex + 1}</span>
-              {modifiedLines[modifiedIndex]}
-            </div>
-          </div>
-        );
-        additions++;
-        modifiedIndex++;
-      }
+    if ((row.type === "removed" || row.type === "changed") && row.left) {
+      unified.push({
+        key: `u-${index}-left`,
+        prefix: "-",
+        type: "removed",
+        text: row.left.text,
+        leftLine,
+      });
+      leftLine += 1;
     }
 
-    setStats({ additions, deletions, unchanged });
-    setDiffData(diffLines);
-    setDiffResult(<div className="overflow-auto font-mono text-sm">{result}</div>);
-    
-    // Initialize merged text with original text
-    const initializeMergedText = () => {
-      setMergedText(originalText);
-    };
-    
-    initializeMergedText();
-    setActiveTab("diff");
-  };
+    if ((row.type === "added" || row.type === "changed") && row.right) {
+      unified.push({
+        key: `u-${index}-right`,
+        prefix: "+",
+        type: "added",
+        text: row.right.text,
+        rightLine,
+      });
+      rightLine += 1;
+    }
+  });
+
+  return unified;
+};
+
+const normalizeText = (value: string, options: CompareOptions): string => {
+  let normalized = value;
+
+  if (options.ignoreLineEndings) {
+    normalized = normalized.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  }
+
+  if (options.ignoreWhitespace) {
+    normalized = normalized
+      .split("\n")
+      .map((line) => line.trim().replace(/\s+/g, " "))
+      .join("\n");
+  }
+
+  return normalized;
+};
+
+const buildInlineDiff = (left: string, right: string, mode: DiffMode, options: CompareOptions): InlineToken[] => {
+  if (mode === "char") {
+    return diffChars(left, right, { ignoreCase: options.ignoreCase }) as InlineToken[];
+  }
+
+  return diffWordsWithSpace(left, right, { ignoreCase: options.ignoreCase }) as InlineToken[];
+};
+
+const buildUnifiedTextExport = (rows: UnifiedRow[]): string => {
+  return rows.map((row) => `${row.prefix}${row.text}`).join("\n");
+};
+
+const computeSimilarity = (left: string, right: string, options: CompareOptions): number => {
+  const charTokens = diffChars(left, right, { ignoreCase: options.ignoreCase }) as InlineToken[];
+  const unchangedChars = charTokens.filter((t) => !t.added && !t.removed).reduce((acc, t) => acc + t.value.length, 0);
+  const base = Math.max(left.length, right.length);
+
+  if (base === 0) {
+    return 100;
+  }
+
+  return Math.round((unchangedChars / base) * 100);
+};
+
+const readFileText = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Unable to read file"));
+    reader.readAsText(file);
+  });
+};
+
+const TextareaWithLineNumbers = ({ value, onChange, placeholder }: { value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; placeholder: string }) => {
+  const lines = value.split("\n").length;
+  const lineNumbers = Array.from({ length: lines }, (_, i) => i + 1);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
   
-  // Function to apply a line from either the left or right side
-  const applyChange = (lineIndex: number, side: 'left' | 'right') => {
-    const line = diffData[lineIndex];
-    
-    // If the line is unchanged, do nothing
-    if (line.type === 'unchanged') return;
-    
-    // Create arrays of lines for easier manipulation
-    const mergedLines = mergedText.split('\n');
-    const originalLines = originalText.split('\n');
-    const modifiedLines = modifiedText.split('\n');
-    
-    // Get all lines before the current diffLine in the merged text
-    const prevLines: DiffLine[] = diffData.slice(0, lineIndex).filter(
-      l => l.type === 'unchanged' || 
-           (l.type === 'deletion' && side === 'left') || 
-           (l.type === 'addition' && side === 'right')
-    );
-    
-    let lastIndex = -1;
-    if (prevLines.length > 0) {
-      const lastLine = prevLines[prevLines.length - 1];
-      lastIndex = side === 'left' ? lastLine.originalIndex : lastLine.modifiedIndex;
-    }
-    
-    // Determine the correct insertion index in the merged text
-    let insertIndex = lastIndex + 1;
-    if (insertIndex >= mergedLines.length) {
-      insertIndex = mergedLines.length;
-    }
-    
-    // Get the content to insert based on the requested side
-    const contentToInsert = side === 'left' ? line.originalContent : line.modifiedContent;
-    
-    // Handle different types of changes
-    if (line.type === 'deletion' && side === 'left') {
-      // Keep line from left (original) side
-      // It's already in the merged text, so no action needed
-      toast({
-        title: "Change Applied",
-        description: "Kept original line"
-      });
-    } else if (line.type === 'addition' && side === 'right') {
-      // Add line from right (modified) side to merged text
-      mergedLines.splice(insertIndex, 0, contentToInsert);
-      setMergedText(mergedLines.join('\n'));
-      toast({
-        title: "Change Applied",
-        description: "Added new line from modified text"
-      });
-    } else if (line.type === 'deletion' && side === 'right') {
-      // Remove line from merged text
-      mergedLines.splice(insertIndex, 1);
-      setMergedText(mergedLines.join('\n'));
-      toast({
-        title: "Change Applied",
-        description: "Removed line from original text"
-      });
-    } else if (line.type === 'addition' && side === 'left') {
-      // Ignore the added line from the right side
-      toast({
-        title: "Change Ignored",
-        description: "Ignored new line from modified text"
-      });
+  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = e.currentTarget.scrollTop;
     }
   };
 
-  // Longest common subsequence algorithm to find common lines
-  const longestCommonSubsequence = (arr1: string[], arr2: string[]): string[] => {
-    const lengths: number[][] = Array(arr1.length + 1)
-      .fill(0)
-      .map(() => Array(arr2.length + 1).fill(0));
+  return (
+    <div className="flex border rounded-lg overflow-hidden bg-white dark:bg-slate-950 h-80">
+      <div 
+        ref={lineNumbersRef}
+        className="bg-muted px-3 py-2 text-right text-xs text-muted-foreground font-mono select-none border-r overflow-y-hidden overflow-x-hidden"
+        style={{ lineHeight: "1.5", width: "50px", flexShrink: 0 }}
+      >
+        {lineNumbers.map((num) => (
+          <div key={num} style={{ height: "1.5em", lineHeight: "1.5em" }}>
+            {num}
+          </div>
+        ))}
+      </div>
+      <textarea
+        value={value}
+        onChange={onChange}
+        onScroll={handleScroll}
+        placeholder={placeholder}
+        className="flex-1 p-3 font-mono text-sm resize-none focus:outline-none bg-white dark:bg-slate-950 text-foreground border-none"
+        style={{ lineHeight: "1.5", overflowY: "scroll", overflowX: "auto" }}
+        spellCheck="false"
+      />
+    </div>
+  );
+};
 
-    // Fill the lengths array
-    for (let i = 0; i <= arr1.length; i++) {
-      for (let j = 0; j <= arr2.length; j++) {
-        if (i === 0 || j === 0) {
-          lengths[i][j] = 0;
-        } else if (arr1[i - 1] === arr2[j - 1]) {
-          lengths[i][j] = lengths[i - 1][j - 1] + 1;
-        } else {
-          lengths[i][j] = Math.max(lengths[i - 1][j], lengths[i][j - 1]);
-        }
-      }
+export default function DiffChecker() {
+  const { toast } = useToast();
+
+  const leftFileRef = useRef<HTMLInputElement>(null);
+  const rightFileRef = useRef<HTMLInputElement>(null);
+
+  const [leftText, setLeftText] = useState("");
+  const [rightText, setRightText] = useState("");
+  const [mode, setMode] = useState<DiffMode>("line");
+  const [view, setView] = useState<ViewMode>("side-by-side");
+  const [showResults, setShowResults] = useState(false);
+  const [options, setOptions] = useState<CompareOptions>({
+    ignoreCase: false,
+    ignoreWhitespace: false,
+    ignoreLineEndings: true,
+    showOnlyDifferences: false,
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const left = params.get("left");
+    const right = params.get("right");
+    const modeParam = params.get("mode") as DiffMode | null;
+    const viewParam = params.get("view") as ViewMode | null;
+
+    if (left) setLeftText(left);
+    if (right) setRightText(right);
+    if (modeParam === "line" || modeParam === "word" || modeParam === "char") {
+      setMode(modeParam);
     }
+    if (viewParam === "side-by-side" || viewParam === "unified") {
+      setView(viewParam);
+    }
+  }, []);
 
-    // Backtrack to find the LCS
-    const result: string[] = [];
-    let i = arr1.length;
-    let j = arr2.length;
+  const normalizedLeft = useMemo(() => normalizeText(leftText, options), [leftText, options]);
+  const normalizedRight = useMemo(() => normalizeText(rightText, options), [rightText, options]);
 
-    while (i > 0 && j > 0) {
-      if (arr1[i - 1] === arr2[j - 1]) {
-        result.unshift(arr1[i - 1]);
-        i--;
-        j--;
-      } else if (lengths[i - 1][j] >= lengths[i][j - 1]) {
-        i--;
+  const lineRows = useMemo(() => {
+    const tokens = tokenizeLines(normalizedLeft, normalizedRight, options);
+    return alignSideBySide(tokens);
+  }, [normalizedLeft, normalizedRight, options]);
+
+  const filteredLineRows = useMemo(() => {
+    if (!options.showOnlyDifferences) {
+      return lineRows;
+    }
+    return lineRows.filter((row) => row.type !== "unchanged");
+  }, [lineRows, options.showOnlyDifferences]);
+
+  const unifiedRows = useMemo(() => {
+    return toUnifiedRows(lineRows, options.showOnlyDifferences);
+  }, [lineRows, options.showOnlyDifferences]);
+
+  const inlineTokens = useMemo(() => {
+    return buildInlineDiff(normalizedLeft, normalizedRight, mode, options);
+  }, [normalizedLeft, normalizedRight, mode, options]);
+
+  const filteredInlineTokens = useMemo(() => {
+    if (!options.showOnlyDifferences) {
+      return inlineTokens;
+    }
+    return inlineTokens.filter((token) => token.added || token.removed);
+  }, [inlineTokens, options.showOnlyDifferences]);
+
+  const stats = useMemo(() => {
+    const added = lineRows.filter((row) => row.type === "added").length;
+    const removed = lineRows.filter((row) => row.type === "removed").length;
+    const changed = lineRows.filter((row) => row.type === "changed").length;
+    const unchanged = lineRows.filter((row) => row.type === "unchanged").length;
+    const similarity = computeSimilarity(normalizedLeft, normalizedRight, options);
+
+    return { added, removed, changed, unchanged, similarity };
+  }, [lineRows, normalizedLeft, normalizedRight, options]);
+
+  const handleFileLoad = async (side: "left" | "right", file: File | null) => {
+    if (!file) return;
+
+    try {
+      const content = await readFileText(file);
+      if (side === "left") {
+        setLeftText(content);
       } else {
-        j--;
+        setRightText(content);
       }
-    }
 
-    return result;
-  };
-
-  const handleOriginalChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setOriginalText(e.target.value);
-  };
-
-  const handleModifiedChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setModifiedText(e.target.value);
-  };
-
-  const copyResults = async () => {
-    try {
-      // Create a text representation of the diff
-      const originalLines = originalText.split("\n");
-      const modifiedLines = modifiedText.split("\n");
-      
-      let diffText = "===== DIFF RESULT =====\n\n";
-      diffText += `ORIGINAL (${originalLines.length} lines):\n${originalText}\n\n`;
-      diffText += `MODIFIED (${modifiedLines.length} lines):\n${modifiedText}\n\n`;
-      diffText += `SUMMARY:\n- ${stats.additions} additions\n- ${stats.deletions} deletions\n- ${stats.unchanged} unchanged lines\n`;
-      
-      await navigator.clipboard.writeText(diffText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
-    }
-  };
-
-  // Clear all data
-  const clearAll = () => {
-    setOriginalText("");
-    setModifiedText("");
-    setDiffResult(null);
-    setDiffData([]);
-    setMergedText("");
-    setStats({ additions: 0, deletions: 0, unchanged: 0 });
-    setActiveTab("input");
-  };
-
-  // Example texts for demonstration
-  const loadExample = () => {
-    setOriginalText(
-`This is a sample text.
-It has several lines.
-Some lines will be modified.
-Others will be left unchanged.
-And some lines will be deleted.`
-    );
-    
-    setModifiedText(
-`This is a sample text.
-It has several lines.
-Some lines have been modified with new content.
-Others will be left unchanged.
-And we have added some brand new lines.
-These lines weren't in the original text.`
-    );
-  };
-
-  // Function to copy merged text to clipboard
-  const copyMergedText = async () => {
-    try {
-      await navigator.clipboard.writeText(mergedText);
       toast({
-        title: "Copied!",
-        description: "Merged text copied to clipboard"
+        title: "File loaded",
+        description: `${file.name} imported into the ${side} pane.`,
       });
-    } catch (err) {
-      console.error("Failed to copy merged text: ", err);
+    } catch {
+      toast({
+        title: "Could not read file",
+        description: "Please try a plain text file.",
+        variant: "destructive",
+      });
     }
   };
-  
-  // Render the diff with merge buttons
-  const renderDiffWithMergeOptions = () => {
-    if (!diffData.length) return null;
-    
-    return diffData.map((line, index) => {
-      if (line.type === 'unchanged') {
-        return (
-          <div key={`unchanged-${index}`} className="flex">
-            <div className="w-1/2 py-1 px-2 bg-gray-50 border-r flex">
-              <span className="w-8 text-gray-500 inline-block text-right mr-3">{line.originalIndex + 1}</span>
-              {line.originalContent}
-            </div>
-            <div className="w-1/2 py-1 px-2 bg-gray-50 flex">
-              <span className="w-8 text-gray-500 inline-block text-right mr-3">{line.modifiedIndex + 1}</span>
-              {line.modifiedContent}
-            </div>
-          </div>
-        );
-      } else if (line.type === 'deletion') {
-        return (
-          <div key={`deletion-${index}`} className="flex relative group">
-            <div className="w-1/2 py-1 px-2 bg-red-900/10 text-red-900 border-r border-red-200 flex shadow-sm">
-              <span className="w-8 text-red-700 inline-block text-right mr-3">{line.originalIndex + 1}</span>
-              {line.originalContent}
-              <div className="absolute inset-y-0 left-1/2 -ml-12 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button 
-                  size="icon" 
-                  variant="outline" 
-                  className="h-6 w-6 rounded-full bg-white shadow-lg hover:bg-green-50"
-                  onClick={() => applyChange(index, 'left')}
-                  title="Keep this line"
-                >
-                  <Check className="h-3 w-3 text-green-600" />
-                </Button>
-              </div>
-            </div>
-            <div className="w-1/2 py-1 px-2 flex items-center">
-              <div className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="h-6 px-2 bg-white shadow hover:bg-red-50"
-                  onClick={() => applyChange(index, 'right')}
-                >
-                  <span className="text-xs text-red-600">Delete Line</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        );
-      } else { // addition
-        return (
-          <div key={`addition-${index}`} className="flex relative group">
-            <div className="w-1/2 py-1 px-2 border-r flex items-center">
-              <div className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="h-6 px-2 bg-white shadow hover:bg-red-50"
-                  onClick={() => applyChange(index, 'left')}
-                >
-                  <span className="text-xs text-red-600">Ignore Line</span>
-                </Button>
-              </div>
-            </div>
-            <div className="w-1/2 py-1 px-2 bg-green-900/10 text-green-900 border-green-200 flex shadow-sm">
-              <span className="w-8 text-green-700 inline-block text-right mr-3">{line.modifiedIndex + 1}</span>
-              {line.modifiedContent}
-              <div className="absolute inset-y-0 left-1/2 ml-3 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button 
-                  size="icon" 
-                  variant="outline" 
-                  className="h-6 w-6 rounded-full bg-white shadow-lg hover:bg-green-50"
-                  onClick={() => applyChange(index, 'right')}
-                  title="Add this line"
-                >
-                  <Check className="h-3 w-3 text-green-600" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        );
-      }
+
+  const handleShare = async () => {
+    const params = new URLSearchParams({
+      left: leftText,
+      right: rightText,
+      mode,
+      view,
+    });
+
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+
+    if (shareUrl.length > 1800) {
+      toast({
+        title: "Text too large for URL sharing",
+        description: "Backend storage is needed for permanent share links for large documents.",
+      });
+      return;
+    }
+
+    await navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Share link copied",
+      description: "You can now send this URL to open the same comparison.",
+    });
+  };
+
+  const handleCopyResult = async () => {
+    const exportText =
+      mode === "line"
+        ? buildUnifiedTextExport(unifiedRows)
+        : filteredInlineTokens.map((token) => token.value).join("");
+
+    await navigator.clipboard.writeText(exportText);
+    toast({
+      title: "Diff copied",
+      description: "Comparison output copied to clipboard.",
+    });
+  };
+
+  const handleDownload = () => {
+    const exportText = buildUnifiedTextExport(unifiedRows);
+    const blob = new Blob([exportText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "comparison.diff.txt";
+    anchor.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Downloaded",
+      description: "Unified diff file downloaded.",
     });
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <Card className="border-none shadow-lg rounded-lg overflow-hidden">
-        <CardHeader className="bg-primary/5 border-b">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-2xl flex items-center text-primary">
-              <GitCompare className="mr-2 h-6 w-6" />
-              Diff Checker
-            </CardTitle>
-            <div className="space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={loadExample}
-                className="bg-white/80 hover:bg-white shadow-sm"
+    <div className="min-h-screen bg-background py-6 px-4">
+      <div className="mx-auto max-w-7xl space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <GitCompare className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold">Diff Checker</h1>
+          </div>
+          {showResults && (
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant="outline">
+                <span className="text-red-600">- {stats.removed}</span>
+                <span className="text-green-600 ml-2">+ {stats.added}</span>
+                <span className="text-blue-600 ml-2">≈ {stats.similarity}%</span>
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {!showResults ? (
+          <>
+            {/* Input textareas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <h2 className="text-base font-semibold text-foreground">Original text</h2>
+                <TextareaWithLineNumbers
+                  value={leftText}
+                  onChange={(e) => setLeftText(e.target.value)}
+                  placeholder="Paste original text here..."
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => leftFileRef.current?.click()}
+                  className="w-full"
+                >
+                  <FileUp className="h-4 w-4 mr-2" />
+                  Open file
+                </Button>
+                <Input
+                  ref={leftFileRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => handleFileLoad("left", e.target.files?.[0] ?? null)}
+                  accept=".txt,.md,.csv,.json,.xml,.html,.css,.js,.ts,.tsx,.py,.java,.go,.rs"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-base font-semibold text-foreground">Changed text</h2>
+                <TextareaWithLineNumbers
+                  value={rightText}
+                  onChange={(e) => setRightText(e.target.value)}
+                  placeholder="Paste changed text here..."
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => rightFileRef.current?.click()}
+                  className="w-full"
+                >
+                  <FileUp className="h-4 w-4 mr-2" />
+                  Open file
+                </Button>
+                <Input
+                  ref={rightFileRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => handleFileLoad("right", e.target.files?.[0] ?? null)}
+                  accept=".txt,.md,.csv,.json,.xml,.html,.css,.js,.ts,.tsx,.py,.java,.go,.rs"
+                />
+              </div>
+            </div>
+
+            {/* Find difference button */}
+            <div className="flex justify-center pt-6">
+              <Button
+                onClick={() => setShowResults(true)}
+                size="lg"
+                className="px-12 py-6 text-base"
               >
-                Load Example
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={clearAll}
-                className="bg-white/80 hover:bg-white shadow-sm"
-              >
-                Clear All
+                Find difference
               </Button>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6 bg-slate-100 p-1 rounded-md">
-              <TabsTrigger value="input" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-md">
-                Input
-              </TabsTrigger>
-              <TabsTrigger 
-                value="diff" 
-                disabled={!diffResult}
-                className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-md"
-              >
-                Diff Result
-              </TabsTrigger>
-              <TabsTrigger 
-                value="merged" 
-                disabled={!diffResult}
-                className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-md"
-              >
-                Merged Result
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="input" className="pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="font-medium">Original Text</div>
-                  <Textarea
-                    placeholder="Paste your original text here..."
-                    className="min-h-[400px] font-mono text-sm"
-                    value={originalText}
-                    onChange={handleOriginalChange}
-                  />
+          </>
+        ) : (
+          <>
+            {/* Results header */}
+            <div className="bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800 rounded-lg border p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setShowResults(false)}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setLeftText(rightText);
+                      setRightText(leftText);
+                      setShowResults(false);
+                    }}
+                  >
+                    <ArrowLeftRight className="h-4 w-4 mr-2" />
+                    Swap
+                  </Button>
+                  <div className="h-6 border-l border-border" />
+                  <Tabs value={view} onValueChange={(value) => setView(value as ViewMode)}>
+                    <TabsList className="h-8">
+                      <TabsTrigger value="side-by-side" className="text-xs">
+                        Side by side
+                      </TabsTrigger>
+                      <TabsTrigger value="unified" className="text-xs">
+                        Unified
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </div>
-                <div className="space-y-2">
-                  <div className="font-medium">Modified Text</div>
-                  <Textarea
-                    placeholder="Paste your modified text here..."
-                    className="min-h-[400px] font-mono text-sm"
-                    value={modifiedText}
-                    onChange={handleModifiedChange}
-                  />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyResult}
+                    className="text-xs"
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDownload}
+                    className="text-xs"
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleShare}
+                    className="text-xs"
+                  >
+                    <Share2 className="h-4 w-4 mr-1" />
+                    Share
+                  </Button>
                 </div>
               </div>
-              <div className="mt-4 flex justify-center">
-                <Button 
-                  onClick={calculateDiff}
-                  className="w-full max-w-md bg-primary hover:bg-primary/90 shadow-md"
-                  disabled={!originalText && !modifiedText}
-                >
-                  <GitCompare className="mr-2 h-4 w-4" />
-                  Compare Texts
-                </Button>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="diff" className="pt-4 space-y-4">
-              {diffResult && (
-                <>
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex space-x-2">
-                      <Badge variant="outline" className="bg-green-900/10 text-green-900 border-green-200 hover:bg-green-900/20 shadow-sm">
-                        {stats.additions} Additions
-                      </Badge>
-                      <Badge variant="outline" className="bg-red-900/10 text-red-900 border-red-200 hover:bg-red-900/20 shadow-sm">
-                        {stats.deletions} Deletions
-                      </Badge>
-                      <Badge variant="outline" className="bg-gray-100 shadow-sm">
-                        {stats.unchanged} Unchanged
-                      </Badge>
+            </div>
+
+            {/* Comparison results - Different styling */}
+            <div className="bg-slate-900 dark:bg-black rounded-lg border border-slate-700 overflow-hidden">
+              {view === "side-by-side" ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 divide-x divide-slate-700">
+                  {/* Left side */}
+                  <div>
+                    <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 sticky top-0">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-3 h-3 rounded-full bg-red-500/30 border border-red-500/50"></span>
+                        <h3 className="text-sm font-semibold text-slate-200">Removals</h3>
+                        <span className="ml-auto text-xs text-slate-400">{filteredLineRows.filter(r => r.type === "removed" || r.type === "changed").length} lines</span>
+                      </div>
                     </div>
-                    <div className="space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setActiveTab("merged")}
-                        className="bg-white shadow-sm hover:bg-gray-50"
-                      >
-                        View Merged Result
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={copyResults}
-                        className="flex items-center bg-white shadow-sm hover:bg-gray-50"
-                        disabled={copied}
-                      >
-                        {copied ? "Copied!" : "Copy Results"}
-                        <Copy className="ml-2 h-4 w-4" />
-                      </Button>
+                    <ScrollArea className="h-[500px]">
+                      <div className="font-mono text-sm text-slate-100">
+                        {filteredLineRows.map((row, index) => (
+                          <div
+                            key={`left-${index}`}
+                            className={cn(
+                              "flex border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors",
+                              row.type === "added" && "hidden",
+                              row.type === "removed" && "bg-red-950/40",
+                              row.type === "changed" && "bg-red-950/40",
+                            )}
+                          >
+                            <div className="w-12 px-3 py-2 bg-slate-800/50 text-right text-xs text-slate-500 select-none shrink-0 border-r border-slate-700/50">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 px-3 py-2 break-words whitespace-pre-wrap text-slate-100">
+                              {row.left?.text}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+
+                  {/* Right side */}
+                  <div>
+                    <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 sticky top-0">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-3 h-3 rounded-full bg-green-500/30 border border-green-500/50"></span>
+                        <h3 className="text-sm font-semibold text-slate-200">Additions</h3>
+                        <span className="ml-auto text-xs text-slate-400">{filteredLineRows.filter(r => r.type === "added" || r.type === "changed").length} lines</span>
+                      </div>
+                    </div>
+                    <ScrollArea className="h-[500px]">
+                      <div className="font-mono text-sm text-slate-100">
+                        {filteredLineRows.map((row, index) => (
+                          <div
+                            key={`right-${index}`}
+                            className={cn(
+                              "flex border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors",
+                              row.type === "removed" && "hidden",
+                              row.type === "added" && "bg-green-950/40",
+                              row.type === "changed" && "bg-green-950/40",
+                            )}
+                          >
+                            <div className="w-12 px-3 py-2 bg-slate-800/50 text-right text-xs text-slate-500 select-none shrink-0 border-r border-slate-700/50">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 px-3 py-2 break-words whitespace-pre-wrap text-slate-100">
+                              {row.right?.text}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 sticky top-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-slate-200">Unified Diff</h3>
+                      <span className="ml-auto text-xs text-slate-400">{unifiedRows.length} changes</span>
                     </div>
                   </div>
-                  
-                  <div className="bg-primary/5 p-3 rounded-md mb-2 text-sm">
-                    <p><strong>Merge instructions:</strong> Hover over any changed line to see merge options. 
-                      Click <Check className="inline h-3 w-3 text-green-600" /> to keep or add a line, or use the "Delete/Ignore" button to remove or skip it.</p>
-                  </div>
-                  
-                  <div className="max-h-[600px] overflow-auto rounded-lg shadow-md border">
-                    <div className="flex border-b bg-slate-100 sticky top-0 z-10">
-                      <div className="w-1/2 py-2 px-4 font-medium border-r">Original</div>
-                      <div className="w-1/2 py-2 px-4 font-medium">Modified</div>
+                  <ScrollArea className="h-[500px]">
+                    <div className="font-mono text-sm text-slate-100">
+                      {unifiedRows.map((row) => (
+                        <div
+                          key={row.key}
+                          className={cn(
+                            "flex border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors px-4 py-2",
+                            row.type === "added" && "bg-green-950/40 text-green-200",
+                            row.type === "removed" && "bg-red-950/40 text-red-200",
+                          )}
+                        >
+                          <div className="w-8 shrink-0 text-right mr-3 font-semibold">
+                            {row.prefix}
+                          </div>
+                          <div className="flex-1 break-words whitespace-pre-wrap">{row.text}</div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="overflow-auto font-mono text-sm">
-                      {renderDiffWithMergeOptions()}
-                    </div>
-                  </div>
-                </>
+                  </ScrollArea>
+                </div>
               )}
-            </TabsContent>
-            
-            <TabsContent value="merged" className="pt-4 space-y-4">
-              {mergedText && (
-                <>
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="font-medium text-lg">Merged Result</div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copyMergedText}
-                      className="flex items-center bg-white shadow-sm hover:bg-gray-50"
-                    >
-                      Copy Merged Text
-                      <Copy className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                  <Textarea
-                    className="min-h-[400px] font-mono text-sm w-full"
-                    value={mergedText}
-                    onChange={(e) => setMergedText(e.target.value)}
-                  />
-                </>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

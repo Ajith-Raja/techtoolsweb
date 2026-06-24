@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { checkTaskStatus, getDownloadUrl, PdfProgress, splitPdf, usePdfProgress } from '@/lib/pdfService';
 
 export default function SplitPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -18,21 +19,76 @@ export default function SplitPdf() {
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  usePdfProgress(taskId, (progressData: PdfProgress) => {
+    if (progressData.status === 'processing') {
+      setProgress(progressData.progress);
+      return;
+    }
+
+    if (progressData.status === 'success' || progressData.status === 'completed') {
+      setProgress(100);
+      setProcessing(false);
+      setCompleted(true);
+
+      const completedTaskId = progressData.task_id || taskId;
+      if (completedTaskId) {
+        checkTaskStatus(completedTaskId)
+          .then(result => {
+            if (result.download_url) {
+              setDownloadUrl(result.download_url);
+            } else {
+              setDownloadUrl(getDownloadUrl(completedTaskId));
+            }
+          })
+          .catch(() => {
+            if (completedTaskId) {
+              setDownloadUrl(getDownloadUrl(completedTaskId));
+            }
+          });
+      }
+
+      toast({
+        title: 'PDF Split Successfully',
+        description: 'Your files are ready to download.',
+      });
+      return;
+    }
+
+    if (progressData.status === 'error') {
+      setProcessing(false);
+      setError(progressData.error || 'An error occurred during splitting');
+      toast({
+        title: 'Split Failed',
+        description: progressData.error || 'An error occurred during splitting',
+        variant: 'destructive',
+      });
+    }
+  });
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
   };
 
   const resetForm = () => {
     setFile(null);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
   };
 
-  const handleSplit = () => {
+  const handleSplit = async () => {
     if (!file) return;
     
     // Validate inputs
@@ -46,23 +102,40 @@ export default function SplitPdf() {
     }
     
     setProcessing(true);
+    setError(null);
+    setProgress(0);
     
-    // Simulate processing
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
-      
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        toast({
-          title: 'PDF Split Successfully',
-          description: 'Your files are ready to download.',
-        });
-      }
-    }, 300);
+    try {
+      const backendSplitMethod = splitMethod === 'interval' ? 'pages' : 'ranges';
+      const pageRanges = splitMethod === 'interval'
+        ? undefined
+        : splitRange.trim().replace(/\s+/g, '');
+      const pagesPerPdf = splitMethod === 'interval' ? splitEvery : undefined;
+
+      const newTaskId = await splitPdf(file, backendSplitMethod, pagesPerPdf, pageRanges);
+      setTaskId(newTaskId);
+    } catch (err) {
+      setProcessing(false);
+      setError((err as Error).message);
+      toast({
+        title: 'Split Failed',
+        description: (err as Error).message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownload = () => {
+    if (!downloadUrl && !taskId) {
+      toast({
+        title: 'Download unavailable',
+        description: 'Please split the PDF before downloading.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    window.open(downloadUrl || (taskId ? getDownloadUrl(taskId) : ''), '_blank');
   };
 
   return (
@@ -160,6 +233,12 @@ export default function SplitPdf() {
                     <Progress value={progress} className="h-2" />
                   </div>
                 )}
+
+                {error && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -190,6 +269,7 @@ export default function SplitPdf() {
               <Button
                 variant="default"
                 className="w-full sm:w-auto"
+                onClick={handleDownload}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Files (ZIP)

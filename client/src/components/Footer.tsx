@@ -32,11 +32,11 @@ export function Footer() {
           {/* Brand section */}
           <div className="space-y-4">
             <a href="/">
-              <span className="text-2xl font-bold text-primary cursor-pointer">SEO Analyzer</span>
+              <span className="text-2xl font-bold text-primary cursor-pointer">Tech Tools</span>
             </a>
-            <p className="text-sm text-muted-foreground">
+            {/* <p className="text-sm text-muted-foreground">
               Advanced SEO analysis and recommendations to improve your website's visibility and ranking.
-            </p>
+            </p> */}
             <div className="flex space-x-4">
               <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <Twitter className="h-5 w-5" />

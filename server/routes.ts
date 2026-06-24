@@ -1129,19 +1129,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const chunk = Buffer.alloc(64 * 1024); // 64KB chunk of zeros
     let bytesSent = 0;
-    
-    // Write chunks
-    while (bytesSent < byteLength) {
+
+    const writeNextChunk = () => {
+      if (bytesSent >= byteLength || res.writableEnded) {
+        res.end();
+        return;
+      }
+
       const remaining = byteLength - bytesSent;
       const toSend = Math.min(chunk.length, remaining);
-      if (toSend === chunk.length) {
-        res.write(chunk);
-      } else {
-        res.write(chunk.subarray(0, toSend));
-      }
+      const payload = toSend === chunk.length ? chunk : chunk.subarray(0, toSend);
+      const canContinue = res.write(payload);
       bytesSent += toSend;
-    }
-    res.end();
+
+      if (!canContinue) {
+        res.once("drain", writeNextChunk);
+        return;
+      }
+
+      setImmediate(writeNextChunk);
+    };
+
+    writeNextChunk();
   });
 
   // 3. Upload endpoint - receives data and measures size

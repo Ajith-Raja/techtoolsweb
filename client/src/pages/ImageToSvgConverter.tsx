@@ -91,7 +91,7 @@ export default function ImageToSvgConverter() {
     
     try {
       // Use the Replit URL if available, otherwise fallback to localhost for development
-      const baseUrl = 'http://localhost:8000';
+      const baseUrl = 'http://localhost:8001';
         
       const response = await fetch(`${baseUrl}/svg-convert`, {
         method: 'POST',

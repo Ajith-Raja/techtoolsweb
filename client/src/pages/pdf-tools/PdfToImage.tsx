@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { getDownloadUrl, usePdfProgress } from '@/lib/pdfService';
 
 export default function PdfToImage() {
   const [file, setFile] = useState<File | null>(null);
@@ -19,21 +20,48 @@ export default function PdfToImage() {
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  usePdfProgress(taskId, (progressData) => {
+    setProgress(progressData.progress);
+
+    if (progressData.status === 'completed') {
+      setProcessing(false);
+      setCompleted(true);
+      toast({
+        title: 'Conversion Completed',
+        description: `Your PDF has been converted to ${imageFormat.toUpperCase()} images.`,
+      });
+    } else if (progressData.status === 'error') {
+      setProcessing(false);
+      setError(progressData.error || 'An error occurred during conversion');
+      toast({
+        title: 'Conversion Failed',
+        description: progressData.error || 'An error occurred during conversion.',
+        variant: 'destructive'
+      });
+    }
+  });
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setError(null);
   };
 
   const resetForm = () => {
     setFile(null);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setError(null);
   };
 
-  const handleConversion = () => {
+  const handleConversion = async () => {
     if (!file) return;
     
     if (pageRange === "custom" && !customRange) {
@@ -46,23 +74,57 @@ export default function PdfToImage() {
     }
     
     setProcessing(true);
-    
-    // Simulate conversion progress
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
-      
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        toast({
-          title: 'Conversion Completed',
-          description: `Your PDF has been converted to ${imageFormat.toUpperCase()} images.`,
-        });
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('pdf_file', file);
+      formData.append('dpi', dpi);
+      formData.append('format', imageFormat);
+      if (pageRange === 'custom' && customRange.trim()) {
+        formData.append('page_range', customRange.trim());
       }
-    }, 300);
+
+      const response = await fetch('http://localhost:8001/pdf-to-images/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to convert PDF to images');
+      }
+
+      const result = await response.json();
+      setTaskId(result.task_id);
+    } catch (err) {
+      setProcessing(false);
+      const message = (err as Error).message || 'Conversion failed';
+      setError(message);
+      toast({
+        title: 'Conversion Failed',
+        description: message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDownload = () => {
+    if (!taskId) {
+      toast({
+        title: 'Download unavailable',
+        description: 'Task not completed yet.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const downloadUrl = getDownloadUrl(taskId);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `${file?.name.replace('.pdf', '') || 'images'}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -170,6 +232,10 @@ export default function PdfToImage() {
                     <Progress value={progress} className="h-2" />
                   </div>
                 )}
+
+                {error && (
+                  <p className="text-sm text-destructive">{error}</p>
+                )}
               </div>
             )}
           </CardContent>
@@ -200,6 +266,8 @@ export default function PdfToImage() {
               <Button
                 variant="default"
                 className="w-full sm:w-auto"
+                onClick={handleDownload}
+                disabled={!taskId}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Images (ZIP)

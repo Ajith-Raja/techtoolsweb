@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -10,6 +10,37 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { extractText, getDownloadUrl, PdfProgress, usePdfProgress } from '@/lib/pdfService';
+
+function formatExtractedText(
+  rawText: string,
+  fileName: string,
+  includeHeaders: boolean,
+  preserveFormatting: boolean,
+  extractionMethod: string,
+  pageRange: string
+) {
+  let text = rawText;
+
+  if (!preserveFormatting) {
+    text = rawText.replace(/\s+/g, ' ').trim();
+  }
+
+  if (!includeHeaders) {
+    return text;
+  }
+
+  const headers = [
+    `Document: ${fileName.replace('.pdf', '')}`,
+    `Extraction Date: ${new Date().toLocaleDateString()}`,
+    extractionMethod === 'range' && pageRange.trim()
+      ? `Pages: ${pageRange.trim()}`
+      : 'Pages: all',
+    '',
+  ];
+
+  return `${headers.join('\n')}${text}`;
+}
 
 export default function ExtractText() {
   const [file, setFile] = useState<File | null>(null);
@@ -22,23 +53,97 @@ export default function ExtractText() {
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const socket = usePdfProgress(taskId, async (progressData: PdfProgress) => {
+    setProgress(progressData.progress);
+
+    if (progressData.status === 'processing') {
+      return;
+    }
+
+    if (progressData.status === 'error') {
+      setProcessing(false);
+      toast({
+        title: 'Extraction Failed',
+        description: progressData.error || 'An error occurred during text extraction.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (progressData.status === 'success' || progressData.status === 'completed') {
+      try {
+        const activeTaskId = progressData.task_id || taskId;
+        if (!activeTaskId || !file) {
+          throw new Error('Missing extraction task details');
+        }
+
+        const response = await fetch(getDownloadUrl(activeTaskId));
+        if (!response.ok) {
+          throw new Error('Failed to download extracted text');
+        }
+
+        const rawText = await response.text();
+        const formattedText = formatExtractedText(
+          rawText,
+          file.name,
+          includeHeaders,
+          preserveFormatting,
+          extractionMethod,
+          pageRange
+        );
+
+        setExtractedText(formattedText);
+        setProcessing(false);
+        setCompleted(true);
+        setProgress(100);
+
+        toast({
+          title: 'Text Extracted Successfully',
+          description: 'The text content has been extracted from your PDF.',
+        });
+      } catch (error) {
+        setProcessing(false);
+        toast({
+          title: 'Extraction Failed',
+          description: (error as Error).message,
+          variant: 'destructive',
+        });
+      }
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close(1000, 'Component unmounting');
+      }
+    };
+  }, [socket]);
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
     setProgress(0);
     setCompleted(false);
     setExtractedText("");
+    setTaskId(null);
   };
 
   const resetForm = () => {
+    if (socket) {
+      socket.close(1000, 'Resetting form');
+    }
     setFile(null);
     setExtractedText("");
     setProgress(0);
     setCompleted(false);
+    setProcessing(false);
+    setTaskId(null);
   };
 
-  const handleExtraction = () => {
+  const handleExtraction = async () => {
     if (!file) return;
     
     if (extractionMethod === "range" && !pageRange.trim()) {
@@ -51,49 +156,22 @@ export default function ExtractText() {
     }
     
     setProcessing(true);
-    
-    // Simulate processing
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
-      
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        
-        // Generate placeholder extracted text
-        const fileName = file.name.replace('.pdf', '');
-        let simulatedText = '';
-        
-        if (includeHeaders) {
-          simulatedText += `Document: ${fileName}\n`;
-          simulatedText += `Extraction Date: ${new Date().toLocaleDateString()}\n`;
-          simulatedText += `Total Pages: ${Math.floor(Math.random() * 10) + 5}\n\n`;
-        }
-        
-        simulatedText += `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n`;
-        
-        if (preserveFormatting) {
-          simulatedText += `Section 1: Introduction\n\n`;
-          simulatedText += `• First important point about ${fileName}\n`;
-          simulatedText += `• Second key consideration for users\n`;
-          simulatedText += `• Third notable feature of this document\n\n`;
-          simulatedText += `Section 2: Analysis\n\n`;
-          simulatedText += `The analysis shows that the implementation of proper procedures results in a 25% increase in efficiency. Further studies indicated that...\n\n`;
-        } else {
-          simulatedText += `Section 1: Introduction First important point about ${fileName} Second key consideration for users Third notable feature of this document Section 2: Analysis The analysis shows that the implementation of proper procedures results in a 25% increase in efficiency. Further studies indicated that...`;
-        }
-        
-        setExtractedText(simulatedText);
-        
-        toast({
-          title: 'Text Extracted Successfully',
-          description: 'The text content has been extracted from your PDF.',
-        });
-      }
-    }, 300);
+    setProgress(0);
+    setCompleted(false);
+    setExtractedText('');
+
+    try {
+      const activePageRange = extractionMethod === 'range' ? pageRange.trim() : undefined;
+      const newTaskId = await extractText(file, activePageRange);
+      setTaskId(newTaskId);
+    } catch (error) {
+      setProcessing(false);
+      toast({
+        title: 'Extraction Failed',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleCopyText = () => {

@@ -8,6 +8,14 @@ import { PdfFileUpload } from '@/components/PdfFileUpload';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { addPassword, checkTaskStatus, getDownloadUrl, PdfProgress, usePdfProgress } from '@/lib/pdfService';
+
+const defaultPermissions = {
+  printing: false,
+  copying: false,
+  editing: false,
+  annotating: false,
+};
 
 export default function ProtectPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -20,20 +28,68 @@ export default function ProtectPdf() {
     editing: boolean;
     annotating: boolean;
   }>({
-    printing: false,
-    copying: false,
-    editing: false,
-    annotating: false,
+    ...defaultPermissions,
   });
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  usePdfProgress(taskId, (progressData: PdfProgress) => {
+    setProgress(progressData.progress);
+
+    if (progressData.status === 'processing') {
+      return;
+    }
+
+    if (progressData.status === 'success' || progressData.status === 'completed') {
+      setProgress(100);
+      setProcessing(false);
+      setCompleted(true);
+
+      const completedTaskId = progressData.task_id || taskId;
+      if (completedTaskId) {
+        checkTaskStatus(completedTaskId)
+          .then(result => {
+            if (result.download_url) {
+              setDownloadUrl(result.download_url);
+            } else {
+              setDownloadUrl(getDownloadUrl(completedTaskId));
+            }
+          })
+          .catch(() => {
+            setDownloadUrl(getDownloadUrl(completedTaskId));
+          });
+      }
+
+      toast({
+        title: 'PDF Protected Successfully',
+        description: 'Your password-protected PDF is ready to download.',
+      });
+      return;
+    }
+
+    if (progressData.status === 'error') {
+      setProcessing(false);
+      setError(progressData.error || 'An error occurred while protecting the PDF');
+      toast({
+        title: 'Protection Failed',
+        description: progressData.error || 'An error occurred while protecting the PDF',
+        variant: 'destructive',
+      });
+    }
+  });
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
   };
 
   const resetForm = () => {
@@ -42,6 +98,10 @@ export default function ProtectPdf() {
     setConfirmPassword("");
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
+    setPermissions({ ...defaultPermissions });
   };
 
   const togglePermission = (key: keyof typeof permissions) => {
@@ -51,7 +111,7 @@ export default function ProtectPdf() {
     }));
   };
 
-  const handleProtect = () => {
+  const handleProtect = async () => {
     if (!file) return;
     
     if (!password) {
@@ -82,23 +142,45 @@ export default function ProtectPdf() {
     }
     
     setProcessing(true);
-    
-    // Simulate processing
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
-      
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        toast({
-          title: 'PDF Protected Successfully',
-          description: 'Your password-protected PDF is ready to download.',
-        });
-      }
-    }, 300);
+    setError(null);
+    setProgress(0);
+
+    try {
+      const newTaskId = await addPassword(file, password, password, permissions);
+      setTaskId(newTaskId);
+    } catch (err) {
+      setProcessing(false);
+      const message = (err as Error).message || 'Failed to protect PDF';
+      setError(message);
+      toast({
+        title: 'Protection Failed',
+        description: message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownload = () => {
+    if (!completed) {
+      toast({
+        title: 'Download unavailable',
+        description: 'Please protect the PDF before downloading.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const url = downloadUrl || (taskId ? getDownloadUrl(taskId) : '');
+    if (!url) {
+      toast({
+        title: 'Download unavailable',
+        description: 'The protected PDF is not ready yet.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    window.open(url, '_blank');
   };
 
   return (
@@ -222,6 +304,12 @@ export default function ProtectPdf() {
                     <Progress value={progress} className="h-2" />
                   </div>
                 )}
+
+                {error && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -252,6 +340,7 @@ export default function ProtectPdf() {
               <Button
                 variant="default"
                 className="w-full sm:w-auto"
+                onClick={handleDownload}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Protected PDF

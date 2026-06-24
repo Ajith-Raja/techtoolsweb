@@ -416,7 +416,7 @@ export default function SitemapVisualizer() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/sitemap/analyze?' + new URLSearchParams({
+      const response = await fetch('http://localhost:8001/api/sitemap/analyze?' + new URLSearchParams({
         url: inputMethod === "url" ? url : textInput,
         max_depth: maxDepth
       }), {

@@ -443,9 +443,9 @@ const RegexTester: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-3">
         {/* Left side - input controls */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-4 space-y-6">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -557,7 +557,7 @@ const RegexTester: React.FC = () => {
         </div>
 
         {/* Right side - results and code */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />

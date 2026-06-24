@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -6,28 +6,78 @@ import { FileText, Download, FileUp, Settings2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { checkTaskStatus, getDownloadUrl, PdfProgress, usePdfProgress, wordToPdf } from '@/lib/pdfService';
 
 export default function WordToPdf() {
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [completed, setCompleted] = useState<boolean>(false);
-  const [preserveLinks, setPreserveLinks] = useState<boolean>(true);
-  const [embedFonts, setEmbedFonts] = useState<boolean>(true);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const socket = usePdfProgress(taskId, (progressData: PdfProgress) => {
+    if (progressData.status === 'processing') {
+      setProgress(progressData.progress);
+      return;
+    }
+
+    if (progressData.status === 'success' || progressData.status === 'completed') {
+      setProgress(100);
+      setProcessing(false);
+      setCompleted(true);
+
+      if (taskId) {
+        checkTaskStatus(taskId)
+          .then(result => {
+            if (result.download_url) {
+              setDownloadUrl(result.download_url);
+            } else {
+              setDownloadUrl(getDownloadUrl(taskId));
+            }
+          })
+          .catch(() => setDownloadUrl(taskId ? getDownloadUrl(taskId) : null));
+      }
+
+      toast({
+        title: 'Conversion Completed',
+        description: 'Your Word document has been converted to PDF.',
+      });
+      return;
+    }
+
+    if (progressData.status === 'error') {
+      setProcessing(false);
+      setError(progressData.error || 'An error occurred during conversion');
+      toast({
+        title: 'Conversion Failed',
+        description: progressData.error || 'An error occurred during conversion',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close(1000, 'Component unmounting');
+      }
+    };
+  }, [socket]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     
     if (selectedFile) {
-      const validExtensions = ['.doc', '.docx', '.rtf', '.odt'];
+      const validExtensions = ['.docx'];
       const fileExtension = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
       
       if (!validExtensions.includes(fileExtension)) {
         toast({
           title: 'Invalid file type',
-          description: 'Please upload a Word document (.doc, .docx, .rtf, or .odt).',
+          description: 'Please upload a Word document (.docx).',
           variant: 'destructive',
         });
         return;
@@ -45,36 +95,62 @@ export default function WordToPdf() {
       setFile(selectedFile);
       setProgress(0);
       setCompleted(false);
+      setTaskId(null);
+      setDownloadUrl(null);
+      setError(null);
     }
   };
 
   const resetForm = () => {
+    if (socket) {
+      socket.close(1000, 'Resetting form');
+    }
     setFile(null);
     setProgress(0);
     setCompleted(false);
+    setTaskId(null);
+    setDownloadUrl(null);
+    setError(null);
   };
 
-  const handleConversion = () => {
+  const handleConversion = async () => {
     if (!file) return;
     
     setProcessing(true);
+    setError(null);
     
-    // Simulate conversion progress
-    let progressVal = 0;
-    const interval = setInterval(() => {
-      progressVal += 5;
-      setProgress(progressVal);
-      
-      if (progressVal >= 100) {
-        clearInterval(interval);
-        setProcessing(false);
-        setCompleted(true);
-        toast({
-          title: 'Conversion Completed',
-          description: 'Your Word document has been converted to PDF.',
-        });
-      }
-    }, 300);
+    try {
+      const newTaskId = await wordToPdf(file);
+      setTaskId(newTaskId);
+    } catch (err) {
+      setProcessing(false);
+      setError((err as Error).message);
+      toast({
+        title: 'Conversion Failed',
+        description: (err as Error).message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownload = () => {
+    if (!completed) {
+      toast({
+        title: 'Download unavailable',
+        description: 'Please complete the conversion before downloading.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
+      return;
+    }
+
+    if (taskId) {
+      window.open(getDownloadUrl(taskId), '_blank');
+    }
   };
 
   return (
@@ -107,13 +183,13 @@ export default function WordToPdf() {
                 >
                   <FileUp className="h-8 w-8 mb-4 mx-auto text-muted-foreground" />
                   <span className="font-medium text-primary block mb-1">
-                    Click to upload a Word document
+                    Click to upload a Word document (.docx)
                   </span>
                   <span className="text-sm text-muted-foreground">
                     or drag and drop here
                   </span>
                   <span className="block mt-2 text-xs text-muted-foreground">
-                    Supports .doc, .docx, .rtf, and .odt files (max 15MB)
+                    Supports .docx files only (max 15MB)
                   </span>
                 </Label>
               </div>
@@ -139,42 +215,6 @@ export default function WordToPdf() {
                   </Button>
                 </div>
                 
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Conversion Options</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="preserve-links">Preserve hyperlinks</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Keep clickable links in the PDF document
-                        </p>
-                      </div>
-                      <Switch
-                        id="preserve-links"
-                        checked={preserveLinks}
-                        onCheckedChange={setPreserveLinks}
-                        disabled={processing || completed}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="embed-fonts">Embed fonts</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Include fonts within the PDF file
-                        </p>
-                      </div>
-                      <Switch
-                        id="embed-fonts"
-                        checked={embedFonts}
-                        onCheckedChange={setEmbedFonts}
-                        disabled={processing || completed}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
                 {(processing || completed) && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -182,6 +222,12 @@ export default function WordToPdf() {
                       <span>{progress}%</span>
                     </div>
                     <Progress value={progress} className="h-2" />
+                  </div>
+                )}
+
+                {error && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
                   </div>
                 )}
               </div>
@@ -214,6 +260,7 @@ export default function WordToPdf() {
               <Button
                 variant="default"
                 className="w-full sm:w-auto"
+                onClick={handleDownload}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF

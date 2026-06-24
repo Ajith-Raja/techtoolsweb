@@ -85,7 +85,7 @@ export default function QRCodeGenerator() {
     setLoaded(true);
     
     // Fetch available style options when component mounts
-    const apiUrl = `${window.location.protocol}//${window.location.hostname}:8000/qr-styles`;
+    const apiUrl = `${window.location.protocol}//${window.location.hostname}:8001/qr-styles`;
     fetch(apiUrl)
       .then(response => response.json())
       .then(data => {
@@ -202,7 +202,7 @@ export default function QRCodeGenerator() {
       }
 
       try {
-        const apiUrl = `${window.location.protocol}//${window.location.hostname}:8000/generate-qr`;
+        const apiUrl = `${window.location.protocol}//${window.location.hostname}:8001/generate-qr`;
         const apiResponse = await fetch(apiUrl, {
           method: "POST",
           body: formData,

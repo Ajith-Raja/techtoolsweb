@@ -66,18 +66,136 @@ export default function CronGenerator() {
     setReadableCron(description);
   };
 
-  const generateNextDates = (cron: string) => {
-    // This is a placeholder - a real implementation would use a library
-    // to calculate actual next execution times
-    const now = new Date();
-    const dates: string[] = [];
-    
-    for (let i = 0; i < 5; i++) {
-      const nextDate = new Date(now);
-      nextDate.setMinutes(now.getMinutes() + i + 1);
-      dates.push(nextDate.toLocaleString());
+  const parseCronField = (field: string, min: number, max: number): Set<number> | null => {
+    const result = new Set<number>();
+
+    if (field === "*") {
+      for (let i = min; i <= max; i++) {
+        result.add(i);
+      }
+      return result;
     }
-    
+
+    const segments = field.split(",");
+
+    for (const segment of segments) {
+      const trimmedSegment = segment.trim();
+      if (!trimmedSegment) {
+        return null;
+      }
+
+      const [rangePart, stepPart] = trimmedSegment.split("/");
+      const step = stepPart ? Number(stepPart) : 1;
+
+      if (!Number.isInteger(step) || step <= 0) {
+        return null;
+      }
+
+      let rangeStart: number;
+      let rangeEnd: number;
+
+      if (rangePart === "*") {
+        rangeStart = min;
+        rangeEnd = max;
+      } else if (rangePart.includes("-")) {
+        const [startText, endText] = rangePart.split("-");
+        rangeStart = Number(startText);
+        rangeEnd = Number(endText);
+      } else {
+        rangeStart = Number(rangePart);
+        rangeEnd = max;
+      }
+
+      if (!Number.isInteger(rangeStart) || !Number.isInteger(rangeEnd)) {
+        return null;
+      }
+
+      if (rangePart !== "*" && !rangePart.includes("-") && !trimmedSegment.includes("/")) {
+        if (rangeStart < min || rangeStart > max) {
+          return null;
+        }
+        result.add(rangeStart);
+        continue;
+      }
+
+      if (rangePart.includes("-") && rangeStart > rangeEnd) {
+        return null;
+      }
+
+      if (rangeStart < min || rangeStart > max || rangeEnd < min || rangeEnd > max) {
+        return null;
+      }
+
+      for (let value = rangeStart; value <= rangeEnd; value += step) {
+        result.add(value);
+      }
+    }
+
+    return result;
+  };
+
+  const isCronMatch = (date: Date, cron: string) => {
+    const parts = cron.trim().split(/\s+/);
+    if (parts.length !== 5) {
+      return false;
+    }
+
+    const minuteSet = parseCronField(parts[0], 0, 59);
+    const hourSet = parseCronField(parts[1], 0, 23);
+    const daySet = parseCronField(parts[2], 1, 31);
+    const monthSet = parseCronField(parts[3], 1, 12);
+    const weekdaySet = parseCronField(parts[4], 0, 7);
+
+    if (!minuteSet || !hourSet || !daySet || !monthSet || !weekdaySet) {
+      return false;
+    }
+
+    const minuteMatch = minuteSet.has(date.getMinutes());
+    const hourMatch = hourSet.has(date.getHours());
+    const dayMatch = daySet.has(date.getDate());
+    const monthMatch = monthSet.has(date.getMonth() + 1);
+    const weekdayMatch = weekdaySet.has(date.getDay()) || (date.getDay() === 0 && weekdaySet.has(7));
+
+    const dayIsWildcard = parts[2] === "*";
+    const weekdayIsWildcard = parts[4] === "*";
+
+    // Standard cron behavior: when both day-of-month and day-of-week are restricted,
+    // a match in either field is accepted.
+    const dayAndWeekMatch = dayIsWildcard || weekdayIsWildcard
+      ? dayMatch && weekdayMatch
+      : dayMatch || weekdayMatch;
+
+    return minuteMatch && hourMatch && monthMatch && dayAndWeekMatch;
+  };
+
+  const generateNextDates = (cron: string) => {
+    const parts = cron.trim().split(/\s+/);
+    if (parts.length !== 5) {
+      setNextDates(["Invalid cron expression"]);
+      return;
+    }
+
+    const dates: string[] = [];
+    const candidate = new Date();
+    candidate.setSeconds(0, 0);
+    candidate.setMinutes(candidate.getMinutes() + 1);
+
+    const maxIterations = 60 * 24 * 366 * 5;
+    let iterations = 0;
+
+    while (dates.length < 5 && iterations < maxIterations) {
+      if (isCronMatch(candidate, cron)) {
+        dates.push(candidate.toLocaleString());
+      }
+      candidate.setMinutes(candidate.getMinutes() + 1);
+      iterations++;
+    }
+
+    if (dates.length === 0) {
+      setNextDates(["No upcoming execution times found for this expression"]);
+      return;
+    }
+
     setNextDates(dates);
   };
 

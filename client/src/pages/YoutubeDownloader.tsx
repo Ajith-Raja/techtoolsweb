@@ -46,7 +46,7 @@ export default function YoutubeDownloader() {
       setIsLoading(true);
       setVideoInfo(null);
       
-      const response = await fetch('http://localhost:8000/youtube/info', {
+      const response = await fetch('http://localhost:8001/youtube/info', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,7 +93,10 @@ export default function YoutubeDownloader() {
     try {
       
       const videoUrl = videoInfo.formats.filter((e) => e.format_id === selectedFormat)[0].url;
-      window.location.href = videoUrl;
+      window.open(
+      videoUrl,
+      '_blank'
+      );
       // setDownloadStatus('starting');
       // setDownloadProgress(0);
       
@@ -136,7 +139,7 @@ export default function YoutubeDownloader() {
   // Poll for status updates
   const pollDownloadStatus = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/youtube/download-status/${id}`);
+      const response = await fetch(`http://localhost:8001/api/youtube/download-status/${id}`);
       
       if (!response.ok) {
         throw new Error('Failed to check download status');
@@ -175,7 +178,10 @@ export default function YoutubeDownloader() {
     if (!downloadId) return;
     
     try {
-      window.location.href = `http://localhost:8000/api/youtube/download-file/${downloadId}`;
+      window.open(
+      `http://localhost:8001/api/youtube/download-file/${downloadId}`,
+      '_blank'
+    );
     } catch (error) {
       console.error('Error downloading file:', error);
       toast({
