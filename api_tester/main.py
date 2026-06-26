@@ -60,7 +60,7 @@ app = FastAPI(title="PDF Tools API", description="API for various PDF manipulati
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend domain
+    allow_origins=["https://techtoolsweb.com", "http://localhost:5000"],  # In production, specify your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
