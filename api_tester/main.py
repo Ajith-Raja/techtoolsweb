@@ -517,6 +517,7 @@ class WatermarkPosition(str, Enum):
 # WebSocket endpoint for progress updates
 @app.websocket("/ws/pdf/{task_id}")
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
+    print("Origin:", websocket.headers.get("origin"))
     if task_id not in active_tasks:
         await websocket.close(code=1008, reason="Task not found")
         return
