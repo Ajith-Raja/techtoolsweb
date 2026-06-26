@@ -169,7 +169,7 @@ export async function compressPdf(pdfFile: File, quality: number): Promise<strin
   formData.append('pdf_file', pdfFile);
   formData.append('quality', quality.toString());
 
-  const response = await fetch(`${PDF_API_BASE_URL}/compress-pdf/`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/compress_pdf/`, {
     method: 'POST',
     body: formData,
   });
