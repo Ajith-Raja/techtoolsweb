@@ -23,6 +23,7 @@ Includes real-time progress tracking via WebSockets.
 
 import os
 import io
+import json
 import tempfile
 import uuid
 import time
@@ -35,6 +36,7 @@ import shutil
 import traceback
 from datetime import datetime
 import httpx
+import redis
 
 import fitz  # PyMuPDF
 #import aspose.pdf as aspose_pdf
@@ -70,8 +72,131 @@ app.add_middleware(
 TEMP_DIR = tempfile.gettempdir()
 os.makedirs(os.path.join(TEMP_DIR, "pdf_tools"), exist_ok=True)
 
-# In-memory storage for active tasks
-active_tasks: Dict[str, Dict[str, Any]] = {}
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+TASK_TTL_SECONDS = int(os.getenv("TASK_TTL_SECONDS", "3600"))
+TASK_STORE_PREFIX = os.getenv("TASK_STORE_PREFIX", "pdf_tools:task")
+
+
+class TaskRecord(dict):
+    def __init__(self, store: "RedisTaskStore", task_id: str, payload: Dict[str, Any]):
+        super().__init__(payload)
+        self._store = store
+        self._task_id = task_id
+
+    def _persist(self):
+        self._store._save(self._task_id, dict(self))
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self._persist()
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self._persist()
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+        self._persist()
+
+
+class RedisTaskStore:
+    def __init__(self, redis_url: str, prefix: str, ttl_seconds: int):
+        self.prefix = prefix
+        self.ttl_seconds = ttl_seconds
+        self._redis_url = redis_url
+        self._redis_client: Optional[redis.Redis] = None
+        self._redis_unavailable = False
+        self._fallback_store: Dict[str, Dict[str, Any]] = {}
+        self._fallback_expiry: Dict[str, float] = {}
+
+    def _key(self, task_id: str) -> str:
+        return f"{self.prefix}:{task_id}"
+
+    def _purge_fallback(self):
+        now = time.time()
+        expired = [task_id for task_id, expiry in self._fallback_expiry.items() if expiry <= now]
+        for task_id in expired:
+            self._fallback_store.pop(task_id, None)
+            self._fallback_expiry.pop(task_id, None)
+
+    def _client(self) -> Optional[redis.Redis]:
+        if self._redis_unavailable:
+            return None
+
+        if self._redis_client is not None:
+            return self._redis_client
+
+        try:
+            client = redis.Redis.from_url(self._redis_url, decode_responses=True)
+            client.ping()
+            self._redis_client = client
+            return client
+        except Exception as error:
+            # Fall back to bounded local storage if Redis is unavailable.
+            print(f"Redis unavailable, using in-process fallback store: {error}")
+            self._redis_unavailable = True
+            return None
+
+    def _save(self, task_id: str, payload: Dict[str, Any]):
+        client = self._client()
+        if client is not None:
+            client.set(self._key(task_id), json.dumps(payload), ex=self.ttl_seconds)
+            return
+
+        self._purge_fallback()
+        self._fallback_store[task_id] = dict(payload)
+        self._fallback_expiry[task_id] = time.time() + self.ttl_seconds
+
+    def _load(self, task_id: str) -> Dict[str, Any]:
+        client = self._client()
+        if client is not None:
+            value = client.get(self._key(task_id))
+            if value is None:
+                raise KeyError(task_id)
+            client.expire(self._key(task_id), self.ttl_seconds)
+            return json.loads(value)
+
+        self._purge_fallback()
+        if task_id not in self._fallback_store:
+            raise KeyError(task_id)
+        self._fallback_expiry[task_id] = time.time() + self.ttl_seconds
+        return dict(self._fallback_store[task_id])
+
+    def __contains__(self, task_id: str) -> bool:
+        client = self._client()
+        if client is not None:
+            return bool(client.exists(self._key(task_id)))
+
+        self._purge_fallback()
+        return task_id in self._fallback_store
+
+    def __getitem__(self, task_id: str) -> TaskRecord:
+        payload = self._load(task_id)
+        return TaskRecord(self, task_id, payload)
+
+    def __setitem__(self, task_id: str, payload: Dict[str, Any]):
+        self._save(task_id, payload)
+
+    def __delitem__(self, task_id: str):
+        client = self._client()
+        if client is not None:
+            client.delete(self._key(task_id))
+            return
+
+        self._fallback_store.pop(task_id, None)
+        self._fallback_expiry.pop(task_id, None)
+
+    def pop(self, task_id: str, default: Any = None):
+        if task_id not in self:
+            return default
+
+        payload = self._load(task_id)
+        self.__delitem__(task_id)
+        return payload
+
+
+# Redis-backed storage for active tasks with TTL to prevent memory leaks.
+active_tasks = RedisTaskStore(REDIS_URL, TASK_STORE_PREFIX, TASK_TTL_SECONDS)
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -105,6 +230,15 @@ class ConnectionManager:
             await websocket.send_json(data)
         except Exception as e:
             print(f"Error sending progress to task {task_id}: {e}")
+            self.disconnect(task_id)
+
+    async def shutdown(self):
+        for task_id, websocket in list(self.active_connections.items()):
+            try:
+                if websocket.application_state == WebSocketState.CONNECTED:
+                    await websocket.close(code=1001, reason="Server shutdown")
+            except Exception:
+                pass
             self.disconnect(task_id)
 
 class InMemoryDB:
