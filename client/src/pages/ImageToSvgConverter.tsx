@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle, Check, Download, FileImage, Upload, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { withToolsApi } from "@/lib/apiConfig";
 
 export default function ImageToSvgConverter() {
   const [file, setFile] = useState<File | null>(null);
@@ -90,10 +91,7 @@ export default function ImageToSvgConverter() {
     formData.append('fill_color', fillColor);
     
     try {
-      // Use the Replit URL if available, otherwise fallback to localhost for development
-      const baseUrl = 'http://localhost:8001';
-        
-      const response = await fetch(`${baseUrl}/svg-convert`, {
+      const response = await fetch(withToolsApi('/svg-convert'), {
         method: 'POST',
         body: formData,
       });

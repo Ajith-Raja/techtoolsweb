@@ -6,6 +6,7 @@ import { Trash2, Plus, FileDown, BarChart, RefreshCw, Lock } from "lucide-react"
 import { contentGapAnalyzerSchema, ContentGapAnalysisResult, ContentGapKeyword, ContentGapCategory } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { withMainApi } from "@/lib/apiConfig";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -76,7 +77,7 @@ export default function ContentGapAnalyzer() {
         competitorDomains: filteredData.competitorDomains.map(domain => formatUrl(domain))
       };
       
-      const res = await apiRequest("POST", "http://localhost:8000/api/content-gap-analyzer", formattedData);
+      const res = await apiRequest("POST", withMainApi("/api/content-gap-analyzer"), formattedData);
       return await res.json() as ContentGapAnalysisResult;
     },
     onSuccess: (data: ContentGapAnalysisResult) => {

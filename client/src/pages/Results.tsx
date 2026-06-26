@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { withMainApi } from "@/lib/apiConfig";
 import type { SeoAnalysisResult } from "@shared/schema";
 
 function ScoreIndicator({ score }: { score: number }) {
@@ -70,7 +71,7 @@ export default function Results() {
   const { toast } = useToast();
 
   const { data: result, isLoading, isError } = useQuery<SeoAnalysisResult>({
-    queryKey: ["http://localhost:8000/api/lastAnalysis"],
+    queryKey: [withMainApi("/api/lastAnalysis")],
     staleTime: 0,
     retry: false,
   });

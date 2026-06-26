@@ -3,14 +3,15 @@ import React from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { queryClient } from "./queryClient";
+import { TOOLS_API_BASE_URL, TOOLS_WS_BASE_URL } from "./apiConfig";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // API base URL
-const PDF_API_BASE_URL = "http://localhost:8001";
+const PDF_API_BASE_URL = TOOLS_API_BASE_URL;
 
 // WebSocket base URL (for real-time progress tracking)
-const WS_BASE_URL = "ws://localhost:8001";
+const WS_BASE_URL = TOOLS_WS_BASE_URL;
 
 export interface PdfTaskResult {
   task_id: string;

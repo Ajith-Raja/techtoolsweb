@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest } from "@/lib/queryClient";
+import { withMainApi } from "@/lib/apiConfig";
 
 interface DomainInfo {
   domain: string;
@@ -99,7 +100,7 @@ export default function DomainAgeChecker() {
       setIsLoading(true);
       debugger;
       // Call the API
-      const response = await apiRequest("POST", "http://localhost:8000/api/domain-age", { domains: domainList });
+      const response = await apiRequest("POST", withMainApi("/api/domain-age"), { domains: domainList });
       
       if (!response.ok) {
         const errorData = await response.json();

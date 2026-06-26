@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Instagram, DownloadCloud, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { withMainApi } from "@/lib/apiConfig";
 
 const instagramSchema = z.object({
   url: z
@@ -39,7 +40,7 @@ export default function InstagramDownloader() {
       setIsLoading(true);
       setApiResult(null);
 
-      const response = await fetch("http://localhost:8000/instagram/info", {
+      const response = await fetch(withMainApi("/instagram/info"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,7 +74,7 @@ export default function InstagramDownloader() {
       setIsDownloading(true);
 
       const values = form.getValues();
-      const response = await fetch("http://localhost:8000/instagram/download", {
+      const response = await fetch(withMainApi("/instagram/download"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

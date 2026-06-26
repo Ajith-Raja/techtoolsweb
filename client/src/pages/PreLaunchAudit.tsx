@@ -15,6 +15,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { apiRequest } from '@/lib/queryClient';
+import { withMainApi } from '@/lib/apiConfig';
 import { jsPDF } from 'jspdf';
 import { cn } from '@/lib/utils';
 
@@ -110,7 +111,7 @@ export default function PreLaunchAudit() {
 
   const runAudit = async () => {
     setIsGenerating(true)
-    const response = await fetch('http://localhost:8000/api/prelaunch-audit', {
+    const response = await fetch(withMainApi('/api/prelaunch-audit'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -150,7 +151,7 @@ export default function PreLaunchAudit() {
       // In a real implementation, this would call your backend API
       const response = await apiRequest(
         'POST',
-        'http://localhost:8000/api/pre-launch-audit', 
+        withMainApi('/api/pre-launch-audit'), 
         auditConfig
       );
       const data = await response.json();

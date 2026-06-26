@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { withMainApi } from "@/lib/apiConfig";
 
 interface PlagiarismResult {
   originalText: string;
@@ -36,7 +37,7 @@ export default function PlagiarismChecker() {
   
   const plagiarismMutation = useMutation({
     mutationFn: async (data: { text: string; type: "text" | "url" }) => {
-      const res = await apiRequest("POST", "http://localhost:8000/api/plagiarism-check", data);
+      const res = await apiRequest("POST", withMainApi("/api/plagiarism-check"), data);
       return res.json();
     },
     onSuccess: (data: PlagiarismResult) => {

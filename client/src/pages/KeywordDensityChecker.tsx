@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BarChart, BarChartHorizontal, Link, Percent, Timer, FileText } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { withMainApi } from "@/lib/apiConfig";
 
 interface KeywordResult {
   keyword: string;
@@ -42,7 +43,7 @@ export default function KeywordDensityChecker() {
     setIsError(false);
     
     try {
-      const response = await fetch("http://localhost:8000/api/keyword-density", {
+      const response = await fetch(withMainApi("/api/keyword-density"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

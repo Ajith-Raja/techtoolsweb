@@ -18,6 +18,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { withMainApi } from "@/lib/apiConfig";
 
 interface ReadabilityScore {
   fleschReading: {
@@ -52,7 +53,7 @@ export default function ReadabilityChecker() {
   
   const mutation = useMutation({
     mutationFn: async ({ type, value }: { type: string; value: string }) => {
-      const response = await fetch("http://localhost:8000/api/readability", {
+      const response = await fetch(withMainApi("/api/readability"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

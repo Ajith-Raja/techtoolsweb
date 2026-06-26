@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "@/components/NavbarNew";
 import { Footer } from "@/components/Footer";
+import { RouteSeoManager } from "@/components/RouteSeoManager";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { Loader2 } from "lucide-react";
@@ -145,6 +146,7 @@ const LazyProtectedRoute = ({ component: Component, ...rest }: any) => {
 function Router() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <RouteSeoManager />
       <Navbar />
       <main className="flex-grow">
         <Switch>

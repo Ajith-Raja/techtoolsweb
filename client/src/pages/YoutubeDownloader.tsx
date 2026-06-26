@@ -14,6 +14,7 @@ import { formatBytes, formatDuration } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { withToolsApi } from '@/lib/apiConfig';
 
 const formSchema = z.object({
   url: z.string().url('Please enter a valid URL').refine(
@@ -46,7 +47,7 @@ export default function YoutubeDownloader() {
       setIsLoading(true);
       setVideoInfo(null);
       
-      const response = await fetch('http://localhost:8001/youtube/info', {
+      const response = await fetch(withToolsApi('/youtube/info'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,7 +140,7 @@ export default function YoutubeDownloader() {
   // Poll for status updates
   const pollDownloadStatus = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8001/api/youtube/download-status/${id}`);
+      const response = await fetch(withToolsApi(`/api/youtube/download-status/${id}`));
       
       if (!response.ok) {
         throw new Error('Failed to check download status');
@@ -179,7 +180,7 @@ export default function YoutubeDownloader() {
     
     try {
       window.open(
-      `http://localhost:8001/api/youtube/download-file/${downloadId}`,
+      withToolsApi(`/api/youtube/download-file/${downloadId}`),
       '_blank'
     );
     } catch (error) {

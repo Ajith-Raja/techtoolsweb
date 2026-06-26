@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { withMainApi } from "@/lib/apiConfig";
 
 interface BacklinkInfo {
   url: string;
@@ -43,7 +44,7 @@ export default function DomainAuthorityChecker() {
   
   const mutation = useMutation({
     mutationFn: async (domainUrl: string) => {
-      const response = await fetch("http://localhost:8000/api/domain-authority/", {
+      const response = await fetch(withMainApi("/api/domain-authority/"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: domainUrl })

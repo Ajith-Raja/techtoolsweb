@@ -15,6 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { withMainApi } from "@/lib/apiConfig";
 import { analyzeSiteSchema, type AnalyzeSiteInput } from "@shared/schema";
 
 export default function Home() {
@@ -30,7 +31,7 @@ export default function Home() {
 
   const analyzeMutation = useMutation({
     mutationFn: async (data: AnalyzeSiteInput) => {
-      const response = await apiRequest("POST", "http://localhost:8000/api/analyze", data);
+      const response = await apiRequest("POST", withMainApi("/api/analyze"), data);
       return response.json();
     },
     onSuccess: () => {

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect, useRef } from "react";
 import { Loader2, FileUp, Globe, LinkIcon, ExternalLink, ChevronRight, FolderTree, MonitorSmartphone, Download, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { withToolsApi } from "@/lib/apiConfig";
 
 interface SitemapNode {
   url: string;
@@ -416,7 +417,7 @@ export default function SitemapVisualizer() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8001/api/sitemap/analyze?' + new URLSearchParams({
+      const response = await fetch(withToolsApi('/api/sitemap/analyze') + '?' + new URLSearchParams({
         url: inputMethod === "url" ? url : textInput,
         max_depth: maxDepth
       }), {

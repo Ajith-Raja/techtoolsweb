@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { getDownloadUrl, usePdfProgress } from '@/lib/pdfService';
+import { withToolsApi } from '@/lib/apiConfig';
 
 export default function PdfToImage() {
   const [file, setFile] = useState<File | null>(null);
@@ -85,7 +86,7 @@ export default function PdfToImage() {
         formData.append('page_range', customRange.trim());
       }
 
-      const response = await fetch('http://localhost:8001/pdf-to-images/', {
+      const response = await fetch(withToolsApi('/pdf-to-images/'), {
         method: 'POST',
         body: formData,
       });
