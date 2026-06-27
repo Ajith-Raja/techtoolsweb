@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { addWatermark, checkTaskStatus, getDownloadUrl, PdfProgress, usePdfProgress } from '@/lib/pdfService';
+import { addWatermark, checkTaskStatus, getDownloadUrl, loadPdfDocument, PdfProgress, usePdfProgress } from '@/lib/pdfService';
 import * as pdfjsLib from 'pdfjs-dist';
 
 export default function WatermarkPdf() {
@@ -184,8 +184,7 @@ export default function WatermarkPdf() {
 
       try {
         const buffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: buffer });
-        const pdfDocument = await loadingTask.promise;
+        const pdfDocument = await loadPdfDocument(buffer);
         const page = await pdfDocument.getPage(1);
         const baseViewport = page.getViewport({ scale: 1 });
         const scale = Math.min(1.6, 900 / baseViewport.width);

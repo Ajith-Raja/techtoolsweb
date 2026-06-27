@@ -5,11 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { FileText, Download, MoveVertical, ArrowUp, ArrowDown, File } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PdfFileUpload } from '@/components/PdfFileUpload';
-import { checkTaskStatus, getDownloadUrl, PdfProgress, reorderPages, usePdfProgress } from '@/lib/pdfService';
+import { checkTaskStatus, getDownloadUrl, loadPdfDocument, PdfProgress, reorderPages, usePdfProgress } from '@/lib/pdfService';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface PageItem {
   id: string;
@@ -118,8 +115,7 @@ export default function ReorderPdf() {
 
     try {
       const fileBuffer = await selectedFile.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: fileBuffer });
-      const pdfDocument = await loadingTask.promise;
+      const pdfDocument = await loadPdfDocument(fileBuffer);
 
       if (activeLoadIdRef.current !== loadId) {
         return;

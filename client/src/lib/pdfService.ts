@@ -7,6 +7,32 @@ import { TOOLS_API_BASE_URL, TOOLS_WS_BASE_URL } from "./apiConfig";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+const WORKER_ERROR_TOKENS = [
+  'setting up fake worker failed',
+  'failed to fetch dynamically imported module',
+  'no "globalworkeroptions.workersrc" specified',
+  'imported module'
+];
+
+function isWorkerBootError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  const normalized = message.toLowerCase();
+  return WORKER_ERROR_TOKENS.some(token => normalized.includes(token));
+}
+
+export async function loadPdfDocument(data: ArrayBuffer | Uint8Array): Promise<pdfjsLib.PDFDocumentProxy> {
+  try {
+    return await pdfjsLib.getDocument({ data }).promise;
+  } catch (error) {
+    if (!isWorkerBootError(error)) {
+      throw error;
+    }
+
+    // Fallback for environments where worker module fetch is blocked/misconfigured.
+    return await pdfjsLib.getDocument({ data, disableWorker: true } as any).promise;
+  }
+}
+
 // API base URL
 const PDF_API_BASE_URL = TOOLS_API_BASE_URL;
 
@@ -141,13 +167,13 @@ export function getDownloadUrl(taskId: string): string {
 
 export async function getPdfPageCount(pdfFile: File): Promise<number> {
   const buffer = await pdfFile.arrayBuffer();
-  const pdfDocument = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const pdfDocument = await loadPdfDocument(buffer);
   return pdfDocument.numPages;
 }
 
 export async function getPdfMetadata(pdfFile: File): Promise<PdfMetadataFields> {
   const buffer = await pdfFile.arrayBuffer();
-  const pdfDocument = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const pdfDocument = await loadPdfDocument(buffer);
   const metadata = await pdfDocument.getMetadata().catch(() => null);
 
   const info = (metadata?.info as Record<string, unknown> | undefined) ?? {};
