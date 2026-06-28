@@ -12,7 +12,6 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { addWatermark, checkTaskStatus, getDownloadUrl, loadPdfDocument, PdfProgress, usePdfProgress } from '@/lib/pdfService';
-import * as pdfjsLib from 'pdfjs-dist';
 
 export default function WatermarkPdf() {
   const [file, setFile] = useState<File | null>(null);

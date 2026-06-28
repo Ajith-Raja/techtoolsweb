@@ -6,7 +6,7 @@ import { FileText, Download, RotateCw, RotateCcw, File } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PdfFileUpload } from '@/components/PdfFileUpload';
 import { checkTaskStatus, getDownloadUrl, loadPdfDocument, PdfProgress, rotatePages, usePdfProgress } from '@/lib/pdfService';
-import * as pdfjsLib from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 interface PagePreview {
   pageNumber: number;
@@ -72,7 +72,7 @@ export default function RotatePdf() {
   });
 
   const renderPageThumbnail = async (
-    pdf: pdfjsLib.PDFDocumentProxy,
+    pdf: PDFDocumentProxy,
     pageNumber: number
   ): Promise<{ thumbnailDataUrl: string; originalRotation: number }> => {
     const page = await pdf.getPage(pageNumber);

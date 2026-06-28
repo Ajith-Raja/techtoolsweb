@@ -6,7 +6,7 @@ import { FileText, Download, MoveVertical, ArrowUp, ArrowDown, File } from 'luci
 import { useToast } from '@/hooks/use-toast';
 import { PdfFileUpload } from '@/components/PdfFileUpload';
 import { checkTaskStatus, getDownloadUrl, loadPdfDocument, PdfProgress, reorderPages, usePdfProgress } from '@/lib/pdfService';
-import * as pdfjsLib from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 interface PageItem {
   id: string;
@@ -73,7 +73,7 @@ export default function ReorderPdf() {
     }
   });
 
-  const renderPageThumbnail = async (pdf: pdfjsLib.PDFDocumentProxy, pageNumber: number): Promise<string> => {
+  const renderPageThumbnail = async (pdf: PDFDocumentProxy, pageNumber: number): Promise<string> => {
     const page = await pdf.getPage(pageNumber);
     const baseViewport = page.getViewport({ scale: 1 });
     const targetWidth = 140;

@@ -5,7 +5,11 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { queryClient } from "./queryClient";
 import { TOOLS_API_BASE_URL, TOOLS_WS_BASE_URL } from "./apiConfig";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+const SHOULD_USE_PDF_WORKER = import.meta.env.DEV;
+
+if (SHOULD_USE_PDF_WORKER) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+}
 
 const WORKER_ERROR_TOKENS = [
   'setting up fake worker failed',
@@ -21,8 +25,10 @@ function isWorkerBootError(error: unknown): boolean {
 }
 
 export async function loadPdfDocument(data: ArrayBuffer | Uint8Array): Promise<pdfjsLib.PDFDocumentProxy> {
+  const baseOptions = SHOULD_USE_PDF_WORKER ? { data } : ({ data, disableWorker: true } as const);
+
   try {
-    return await pdfjsLib.getDocument({ data }).promise;
+    return await pdfjsLib.getDocument(baseOptions).promise;
   } catch (error) {
     if (!isWorkerBootError(error)) {
       throw error;
