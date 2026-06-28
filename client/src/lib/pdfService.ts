@@ -1,15 +1,9 @@
 // PDF Service - Handles communication with the PDF Tools API
 import React from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import 'pdfjs-dist/build/pdf.worker.min.mjs';
 import { queryClient } from "./queryClient";
 import { TOOLS_API_BASE_URL, TOOLS_WS_BASE_URL } from "./apiConfig";
-
-const SHOULD_USE_PDF_WORKER = import.meta.env.DEV;
-
-if (SHOULD_USE_PDF_WORKER) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
-}
 
 const WORKER_ERROR_TOKENS = [
   'setting up fake worker failed',
@@ -25,17 +19,15 @@ function isWorkerBootError(error: unknown): boolean {
 }
 
 export async function loadPdfDocument(data: ArrayBuffer | Uint8Array): Promise<pdfjsLib.PDFDocumentProxy> {
-  const baseOptions = SHOULD_USE_PDF_WORKER ? { data } : ({ data, disableWorker: true } as const);
-
   try {
-    return await pdfjsLib.getDocument(baseOptions).promise;
+    return await pdfjsLib.getDocument({ data }).promise;
   } catch (error) {
     if (!isWorkerBootError(error)) {
       throw error;
     }
 
-    // Fallback for environments where worker module fetch is blocked/misconfigured.
-    return await pdfjsLib.getDocument({ data, disableWorker: true } as any).promise;
+    // The worker module is preloaded above to populate `globalThis.pdfjsWorker`.
+    return await pdfjsLib.getDocument({ data }).promise;
   }
 }
 
