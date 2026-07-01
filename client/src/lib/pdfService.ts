@@ -651,7 +651,7 @@ export async function wordToPdf(wordFile: File): Promise<string> {
   const formData = new FormData();
   formData.append('word_file', wordFile);
 
-  const response = await fetch(`${PDF_API_BASE_URL}/word_to_pdf/`, {
+  const response = await fetch(`${PDF_API_BASE_URL}/word-to-pdf/`, {
     method: 'POST',
     body: formData,
   });

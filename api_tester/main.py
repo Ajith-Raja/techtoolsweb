@@ -37,6 +37,7 @@ import traceback
 from datetime import datetime
 import httpx
 import redis
+import subprocess
 
 import fitz  # PyMuPDF
 #import aspose.pdf as aspose_pdf
@@ -54,6 +55,11 @@ from yt_dlp import YoutubeDL
 from sitemap_visualizer_api import analyze_sitemap
 from image_to_svg_api import convert_image_to_svg
 from qr_code_api import get_styles, generate_qr_code
+
+try:
+    from pdf2docx import Converter as Pdf2DocxConverter
+except Exception:
+    Pdf2DocxConverter = None
 
 
 # Initialize FastAPI
@@ -559,28 +565,152 @@ def _render_docx_table(pdf_document, page, cursor_y, table, page_width, page_hei
     return page, cursor_y + 8
 
 
+def _find_libreoffice_executable() -> Optional[str]:
+    windows_candidates = [
+        r"C:\Program Files\LibreOffice\program\soffice.com",
+        r"C:\Program Files\LibreOffice\program\soffice.exe",
+        r"C:\Program Files (x86)\LibreOffice\program\soffice.com",
+        r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+    ]
+    for candidate in windows_candidates:
+        if os.path.exists(candidate):
+            return candidate
+
+    for candidate in ("soffice", "soffice.com", "soffice.exe", "libreoffice"):
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+
+    return None
+
+
+def _run_libreoffice_convert(
+    soffice_path: str,
+    input_path: str,
+    output_dir: str,
+    target_format: str,
+    filter_name: Optional[str] = None,
+) -> subprocess.CompletedProcess:
+    convert_to = target_format if not filter_name else f"{target_format}:{filter_name}"
+    command = [
+        soffice_path,
+        "--headless",
+        "--nologo",
+        "--nodefault",
+        "--nofirststartwizard",
+        "--nolockcheck",
+        "--convert-to",
+        convert_to,
+        "--outdir",
+        output_dir,
+        os.path.abspath(input_path),
+    ]
+
+    # LibreOffice embeds Python; inherited venv vars can break startup on Windows.
+    env = os.environ.copy()
+    for key in ("PYTHONHOME", "PYTHONPATH", "PYTHONEXECUTABLE"):
+        env.pop(key, None)
+
+    return subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=output_dir,
+    )
+
+
 def _convert_docx_to_pdf(input_path: str, output_path: str) -> None:
-    """Create a readable PDF from a DOCX document."""
-    from docx import Document
+    """Convert DOCX to PDF using LibreOffice in headless mode (Linux/Windows compatible)."""
+    soffice_path = _find_libreoffice_executable()
+    if not soffice_path:
+        raise Exception(
+            "LibreOffice is required for DOCX to PDF conversion. Install LibreOffice and ensure 'soffice' is available in PATH."
+        )
 
-    document = Document(input_path)
-    pdf_document = fitz.open()
+    output_dir = os.path.dirname(output_path) or "."
+    os.makedirs(output_dir, exist_ok=True)
 
-    page_width = 595
-    page_height = 842
-    margin = 48
-    usable_width = page_width - (margin * 2)
-    page = pdf_document.new_page(width=page_width, height=page_height)
-    cursor_y = margin
+    generated_name = f"{os.path.splitext(os.path.basename(input_path))[0]}.pdf"
+    generated_path = os.path.join(output_dir, generated_name)
 
-    for block in _iter_docx_body_elements(document):
-        if block.__class__.__name__ == "Table":
-            page, cursor_y = _render_docx_table(pdf_document, page, cursor_y, block, page_width, page_height, margin, usable_width)
-        else:
-            page, cursor_y = _render_docx_paragraph(pdf_document, page, cursor_y, block, document, page_width, page_height, margin, usable_width)
+    if os.path.exists(generated_path) and os.path.abspath(generated_path) != os.path.abspath(output_path):
+        os.unlink(generated_path)
 
-    pdf_document.save(output_path, garbage=4, deflate=True)
-    pdf_document.close()
+    completed = _run_libreoffice_convert(
+        soffice_path=soffice_path,
+        input_path=input_path,
+        output_dir=output_dir,
+        target_format="pdf",
+    )
+
+    if completed.returncode != 0:
+        fallback = _run_libreoffice_convert(
+            soffice_path=soffice_path,
+            input_path=input_path,
+            output_dir=output_dir,
+            target_format="pdf",
+            filter_name="writer_pdf_Export",
+        )
+        if fallback.returncode != 0:
+            details = (fallback.stderr or fallback.stdout or completed.stderr or completed.stdout or "").strip()
+            raise Exception(f"LibreOffice conversion failed: {details}")
+
+    if not os.path.exists(generated_path):
+        raise Exception("LibreOffice conversion did not produce a PDF output file")
+
+    if os.path.abspath(generated_path) != os.path.abspath(output_path):
+        shutil.move(generated_path, output_path)
+
+
+def _convert_pdf_to_docx(input_path: str, output_path: str) -> None:
+    """Convert PDF to DOCX using pdf2docx, with LibreOffice fallback when needed."""
+    output_dir = os.path.dirname(output_path) or "."
+    os.makedirs(output_dir, exist_ok=True)
+
+    generated_name = f"{os.path.splitext(os.path.basename(input_path))[0]}.docx"
+    generated_path = os.path.join(output_dir, generated_name)
+
+    if os.path.exists(generated_path) and os.path.abspath(generated_path) != os.path.abspath(output_path):
+        os.unlink(generated_path)
+
+    if Pdf2DocxConverter is not None:
+        converter = None
+        try:
+            converter = Pdf2DocxConverter(input_path)
+            converter.convert(output_path)
+            converter.close()
+
+            if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                return
+        except Exception:
+            if converter is not None:
+                try:
+                    converter.close()
+                except Exception:
+                    pass
+
+    soffice_path = _find_libreoffice_executable()
+    if not soffice_path:
+        raise Exception(
+            "PDF to DOCX conversion failed with pdf2docx and LibreOffice was not found. Install LibreOffice and ensure 'soffice' is available in PATH."
+        )
+
+    completed = _run_libreoffice_convert(
+        soffice_path=soffice_path,
+        input_path=input_path,
+        output_dir=output_dir,
+        target_format="docx",
+    )
+    if completed.returncode != 0:
+        details = (completed.stderr or completed.stdout or "").strip()
+        raise Exception(f"LibreOffice conversion failed: {details}")
+
+    if not os.path.exists(generated_path):
+        raise Exception("LibreOffice conversion did not produce a DOCX output file")
+
+    if os.path.abspath(generated_path) != os.path.abspath(output_path):
+        shutil.move(generated_path, output_path)
 
 def build_temp_file(file: str) -> str:
     return os.path.join(TEMP_DIR, "pdf_tools", f"{file}")
@@ -2249,7 +2379,7 @@ async def process_add_header_footer(task_id: str, pdf_file: UploadFile, header_t
             os.unlink(output_path)
 
 # 15. PDF to Word conversion
-@app.post("/pdf_to_word/", description="Convert PDF to Word format (Note: Basic conversion only)")
+@app.post("/pdf-to-word/", description="Convert PDF to Word format with improved layout and image retention")
 async def pdf_to_word(
     background_tasks: BackgroundTasks,
     pdf_file: UploadFile = File(...)
@@ -2259,57 +2389,6 @@ async def pdf_to_word(
     background_tasks.add_task(process_pdf_to_word, task_id, file_bytes)
     return {"task_id": task_id}
 
-
-def _convert_pdf_to_docx_with_aspose(input_path: str, output_path: str) -> None:
-    """Convert PDF to DOCX using Aspose.PDF."""
-    pdf_document = aspose_pdf.Document(input_path)
-    pdf_document.save(output_path, aspose_pdf.SaveFormat.DOC_X)
-
-
-def _extract_pdf_to_docx_with_alignment(input_path: str, output_path: str) -> int:
-    """Fallback converter preserving basic paragraph alignment from PDF blocks."""
-    from docx import Document
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-
-    pdf_document = fitz.open(input_path)
-    total_pages = len(pdf_document)
-    doc = Document()
-
-    for page_index, page in enumerate(pdf_document):
-        page_width = page.rect.width
-        blocks = page.get_text("blocks", sort=True)
-
-        for block in blocks:
-            # block format: (x0, y0, x1, y1, text, block_no, block_type)
-            if len(block) < 5:
-                continue
-
-            x0, _, x1, _, text = block[:5]
-            if not isinstance(text, str):
-                continue
-
-            text = text.strip()
-            if not text:
-                continue
-
-            paragraph = doc.add_paragraph(text)
-            center_x = (x0 + x1) / 2.0
-            block_width = x1 - x0
-
-            # Heuristics for common left/center/right aligned blocks.
-            if abs(center_x - page_width / 2.0) <= page_width * 0.10 and block_width <= page_width * 0.70:
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            elif x0 >= page_width * 0.55:
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            else:
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
-
-        if page_index < total_pages - 1:
-            doc.add_page_break()
-
-    doc.save(output_path)
-    pdf_document.close()
-    return total_pages
 
 async def process_pdf_to_word(task_id: str, pdf_file: bytes):
     input_path = get_temp_file("input", ".pdf")
@@ -2322,42 +2401,31 @@ async def process_pdf_to_word(task_id: str, pdf_file: bytes):
         
         await update_progress(task_id, 5, stage="pdf-to-word-init")
 
-        pdf_document = fitz.open(input_path)
-        total_pages = len(pdf_document)
-        pdf_document.close()
+        with fitz.open(input_path) as pdf_document:
+            total_pages = max(1, len(pdf_document))
 
         await update_progress(task_id, 10, stage="pdf-to-word-prepare")
 
-        try:
-            await update_progress(task_id, 15, stage="aspose-converting")
+        await update_progress(task_id, 15, stage="libreoffice-pdf-to-docx")
 
-            loop = asyncio.get_event_loop()
-            conversion_future = loop.run_in_executor(
-                None,
-                lambda: _convert_pdf_to_docx_with_aspose(input_path, output_path)
-            )
+        loop = asyncio.get_running_loop()
+        conversion_future = loop.run_in_executor(
+            None,
+            lambda: _convert_pdf_to_docx(input_path, output_path)
+        )
 
-            heartbeat_progress = 15
-            while not conversion_future.done():
-                heartbeat_progress = min(90, heartbeat_progress + 2)
-                await update_progress(task_id, heartbeat_progress, stage="aspose-converting")
-                await asyncio.sleep(1)
+        heartbeat_progress = 15
+        while not conversion_future.done():
+            heartbeat_progress = min(95, heartbeat_progress + max(1, int(80 / total_pages)))
+            await update_progress(task_id, heartbeat_progress, stage="libreoffice-pdf-to-docx")
+            await asyncio.sleep(1)
 
-            await conversion_future
+        await conversion_future
 
-            if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-                raise Exception("Aspose conversion completed but no output DOCX was generated")
+        if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            raise Exception("PDF to Word conversion completed but no DOCX output was generated")
 
-            await update_progress(task_id, 95, stage="aspose-converting")
-
-        except Exception as convert_error:
-            print(f"Aspose conversion failed, using alignment fallback: {convert_error}")
-            await update_progress(task_id, 25, stage="fallback-aligned-extraction")
-
-            fallback_pages = _extract_pdf_to_docx_with_alignment(input_path, output_path)
-            for i in range(max(1, fallback_pages)):
-                progress = 25 + int(70 * (i + 1) / max(1, fallback_pages))
-                await update_progress(task_id, progress, stage="fallback-aligned-extraction")
+        await update_progress(task_id, 95, stage="libreoffice-pdf-to-docx")
         
         active_tasks[task_id]["result_file"] = output_path
         await update_progress(task_id, 100, "completed", stage="done")
@@ -2382,7 +2450,7 @@ async def process_pdf_to_word(task_id: str, pdf_file: bytes):
 
 
 # 16. Word to PDF conversion
-@app.post("/word_to_pdf/", description="Convert Word documents to PDF format")
+@app.post("/word-to-pdf/", description="Convert Word documents to PDF format")
 async def word_to_pdf(
     background_tasks: BackgroundTasks,
     word_file: UploadFile = File(...)
@@ -2403,15 +2471,19 @@ async def process_word_to_pdf(task_id: str, file_bytes: bytes, original_filename
 
         await update_progress(task_id, 5, stage="word-to-pdf-init")
 
-        try:
-            from docx import Document
-        except Exception as import_error:
-            raise Exception(f"python-docx is required for Word to PDF conversion: {import_error}")
+        loop = asyncio.get_running_loop()
+        conversion_future = loop.run_in_executor(
+            None,
+            lambda: _convert_docx_to_pdf(input_path, output_path)
+        )
 
-        document = Document(input_path)
-        paragraph_count = max(1, len(document.paragraphs))
+        heartbeat_progress = 10
+        while not conversion_future.done():
+            heartbeat_progress = min(95, heartbeat_progress + 5)
+            await update_progress(task_id, heartbeat_progress, stage="word-to-pdf-converting")
+            await asyncio.sleep(1)
 
-        _convert_docx_to_pdf(input_path, output_path)
+        await conversion_future
 
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             raise Exception("Word to PDF conversion did not generate a PDF")
